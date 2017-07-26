@@ -506,10 +506,8 @@ push(std::string&  s, std::string const&  t, Context const&  ctx)
 
 
 std::string
-process_main(Cursor  cur)
+process_main(Cursor  cur, Context&  ctx)
 {
-  Context  ctx;
-
   std::string  processed;
 
     if(*cur == '#')
@@ -623,7 +621,7 @@ process_main(Cursor  cur)
 
             if(macro)
             {
-              text = macro->get_text();
+              text = process_main(macro->get_text(),ctx);
             }
             
 
@@ -651,9 +649,11 @@ main(int  argc, char**  argv)
 {
   auto  s = load_file(argv[1]);
 
+  preprocessing::Context  ctx;
+
     try
     {
-      s = preprocessing::process_main(Cursor(s));
+      s = preprocessing::process_main(Cursor(s),ctx);
     }
 
 

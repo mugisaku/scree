@@ -55,6 +55,8 @@ set(SOURCES
   preprocessing/pp.cpp
   preprocessing/pp__read_spaces.cpp
   preprocessing/pp__process_directive.cpp
+  preprocessing/pp__read_include.cpp
+  preprocessing/pp__read_define.cpp
 )
 
 

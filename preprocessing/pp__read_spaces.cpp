@@ -4,6 +4,20 @@
 namespace preprocessing{
 
 
+
+
+void
+skip_spaces(Cursor&  cur)
+{
+    while(*cur == ' ')
+    {
+      cur += 1;
+    }
+}
+
+
+
+
 void
 read_spaces(Cursor&  cur)
 {

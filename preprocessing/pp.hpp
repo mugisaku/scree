@@ -18,14 +18,20 @@ void  read_spaces_and_newline(Cursor&  cur);
 void  read_spaces_and_newline_with_escape(Cursor&  cur);
 
 
+std::string  read_quoted(    Cursor&  cur);
 std::string  read_identifier(Cursor&  cur);
 
+
+void  skip_spaces(Cursor&  cur);
 
 std::string  read_directive(Cursor&  cur);
 std::string  process_directive(Cursor  cur, Context&  ctx);
 
+std::string  read_include(Cursor  cur, Context&  ctx);
+void  read_define(Cursor  cur, Context&  ctx);
 
-std::string  process_main(Cursor  cur);
+
+std::string  process_main(Cursor  cur, Context&  ctx);
 
 
 }

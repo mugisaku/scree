@@ -8,16 +8,6 @@ namespace preprocessing{
 
 
 
-std::string
-Macro::
-replace_text(std::string const&  text, Context const&  ctx) const
-{
-  std::string  s;
-
-  return std::move(s);
-}
-
-
 int
 Macro::
 get_value(Context const&  ctx) const

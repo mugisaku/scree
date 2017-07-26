@@ -35,11 +35,10 @@ public:
   text(std::move(text_)){}
 
   bool  operator==(std::string const&  name_) const{return name == name_;}
+
   bool  is_function_style() const{return function_style_flag;}
 
   std::string const&  get_text() const{return text;}
-
-  std::string  replace_text(std::string const&  text, Context const&  ctx) const;
 
   int  get_value(Context const&  ctx) const;
 
