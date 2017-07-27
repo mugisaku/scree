@@ -18,7 +18,7 @@ read_undef(Cursor  cur, Context&  ctx)
 {
   skip_spaces(cur);
 
-  ctx.remove_macro(read_identifier(cur));
+  ctx.remove_macro(read_identifier(cur)->string);
 }
 
 
@@ -28,9 +28,6 @@ read_ifdef(Cursor  cur, Context&  ctx)
   skip_spaces(cur);
 
   auto  id = read_identifier(cur);
-
-  ctx.push_state(ctx.find_macro(id)? ContextState::running
-                                   : ContextState::looking_for_next_block);
 }
 
 
@@ -40,9 +37,6 @@ read_ifndef(Cursor  cur, Context&  ctx)
   skip_spaces(cur);
 
   auto  id = read_identifier(cur);
-
-  ctx.push_state(!ctx.find_macro(id)? ContextState::running
-                                    : ContextState::looking_for_next_block);
 }
 
 
@@ -142,18 +136,20 @@ read_print(Cursor  cur)
 }
 
 
-std::string
+TokenList
 process_directive(Cursor  cur, Context&  ctx)
 {
-  std::string  s;
+  TokenList  ls;
 
   skip_spaces(cur);
 
     if(isalpha(*cur) || (*cur == '_'))
     {
-      auto  id = read_identifier(cur);
+      auto  tok = read_identifier(cur);
 
-           if(id == "include"){s = read_include(cur,ctx);}
+      auto&  id = tok->string;
+
+           if(id == "include"){ls = read_include(cur,ctx);}
       else if(id == "define"){read_define(cur,ctx);}
       else if(id == "undef"){read_undef(cur,ctx);}
       else if(id == "ifdef"){read_ifdef(cur,ctx);}
@@ -168,7 +164,7 @@ process_directive(Cursor  cur, Context&  ctx)
     }
 
 
-  return std::move(s);
+  return std::move(ls);
 }
 
 

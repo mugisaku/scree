@@ -11,7 +11,8 @@
 namespace preprocessing{
 
 
-using ArgumentList = std::vector<std::string>;
+using ParameterList = std::vector<std::string>;
+using  ArgumentList = ParameterList;
 
 
 struct Context;
@@ -22,23 +23,31 @@ Macro
 {
   std::string  name;
 
-  std::vector<std::string>  parameter_list;
+  ParameterList  parameter_list;
 
-  bool      function_style_flag;
-  bool  variable_arguments_flag;
+  bool      function_style_flag=false;
+  bool  variable_arguments_flag=false;
 
   std::string  text;
 
+  int  find_parameter(std::string const&  id) const;
+
 public:
-  Macro(std::string&&  name_, std::string&&  text_):
-  name(std::move(name_)),
-  text(std::move(text_)){}
+  Macro(std::string&&  name_): name(std::move(name_)){}
 
   bool  operator==(std::string const&  name_) const{return name == name_;}
 
-  bool  is_function_style() const{return function_style_flag;}
+  std::string  replace_text(ArgumentList&  argls) const;
 
   std::string const&  get_text() const{return text;}
+
+  void  set_text(std::string&&  txt){text = std::move(txt);}
+
+  void  set_parameter_list(ParameterList&&  ls);
+
+  void   set_function_style_flag(){function_style_flag = true;}
+
+  bool  is_function_style() const{return function_style_flag;}
 
   int  get_value(Context const&  ctx) const;
 

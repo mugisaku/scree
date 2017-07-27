@@ -4,24 +4,13 @@
 
 #include<algorithm>
 #include"pp_operand.hpp"
+#include"pp_token.hpp"
 
 
 namespace preprocessing{
 
 
 struct Context;
-
-
-struct
-Operator
-{
-  char  codes[4];
-
-  constexpr Operator(char  c0=0, char  c1=0, char  c2=0): codes{c0,c1,c2,0}{}
-
-  constexpr uint32_t  operator*() const{return((codes[0]<<24)|(codes[1]<<16)|(codes[2]<<8));}
-
-};
 
 
 enum class
