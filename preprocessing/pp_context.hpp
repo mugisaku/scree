@@ -38,6 +38,8 @@ public:
   void  append_macro(Macro&&  macro){macro_table.emplace_back(std::move(macro));}
   void  remove_macro(std::string const&  name);
 
+  void  print() const;
+
 };
 
 

@@ -47,6 +47,19 @@ find_macro(const std::string&  name) const
 }
 
 
+void
+Context::
+print() const
+{
+    for(auto&  m: macro_table)
+    {
+      m.print();
+
+      printf("\n");
+    }
+}
+
+
 }
 
 

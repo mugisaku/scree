@@ -15,7 +15,7 @@ concatenate(Cursor&  cur)
 {
   std::string  s;
 
-  read_spaces_and_newline_with_escape(cur);
+  skip_spaces_and_newline(cur);
 
     while(s.size() && (s.back() == ' '))
     {
@@ -56,7 +56,7 @@ stringize(Cursor&  cur)
 {
   std::string  s;
 
-  read_spaces_and_newline_with_escape(cur);
+  skip_spaces_and_newline(cur);
 
   s.push_back('\"');
 

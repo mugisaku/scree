@@ -51,6 +51,8 @@ public:
 
   int  get_value(Context const&  ctx) const;
 
+  void  print() const;
+
 };
 
 

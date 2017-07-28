@@ -136,10 +136,10 @@ read_print(Cursor  cur)
 }
 
 
-TokenList
+TokenString
 process_directive(Cursor  cur, Context&  ctx)
 {
-  TokenList  ls;
+  TokenString  ls;
 
   skip_spaces(cur);
 

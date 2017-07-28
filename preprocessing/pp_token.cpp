@@ -1,4 +1,6 @@
 #include"pp_token.hpp"
+#include"pp_unicode.hpp"
+#include"pp_TokenString.hpp"
 #include<cstdio>
 #include<algorithm>
 #include<new>
@@ -176,10 +178,35 @@ print() const
       printf(" \"%s\" ",data.string.data());
       break;
   case(TokenKind::u16string):
-      printf(" u16\"...\" ");
+      printf(" u\"");
+
+        for(auto  c: data.u16string)
+        {
+          printf("%s",UTF8Chunk(c).codes);
+        }
+
+
+      printf("\" ");
       break;
   case(TokenKind::u32string):
-      printf(" u32\"...\" ");
+      printf(" U\"");
+
+        for(auto  c: data.u32string)
+        {
+          printf("%s",UTF8Chunk(c).codes);
+        }
+
+
+      printf("\" ");
+      break;
+  case(TokenKind::character):
+      printf(" \'%c\' ",data.character);
+      break;
+  case(TokenKind::u16character):
+      printf(" u\'%s\' ",UTF8Chunk(data.u16character).codes);
+      break;
+  case(TokenKind::u32character):
+      printf(" U\'%s\' ",UTF8Chunk(data.u16character).codes);
       break;
     }
 }

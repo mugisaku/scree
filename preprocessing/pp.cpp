@@ -40,26 +40,16 @@ load_file(const char*  path)
 }
 
 
-void
-join(preprocessing::TokenList&  dst, preprocessing::TokenList&&  src)
-{
-    for(auto&&  tok: src)
-    {
-      dst.emplace_back(std::move(tok));
-    }
-}
-
-
 }
 
 
 namespace preprocessing{
 
 
-TokenList
+TokenString
 process_identifier(Token&&  id, Cursor&  cur, Context&  ctx)
 {
-  TokenList  ls;
+  TokenString  ls;
 
   auto  macro = ctx.find_macro(id->string);
 
@@ -67,7 +57,7 @@ process_identifier(Token&&  id, Cursor&  cur, Context&  ctx)
     {
         if(macro->is_function_style())
         {
-          read_spaces_and_newline(cur);
+          skip_spaces_and_newline(cur);
 
             if(*cur != '(')
             {
@@ -100,10 +90,95 @@ process_identifier(Token&&  id, Cursor&  cur, Context&  ctx)
 }
 
 
-TokenList
+Token
+read_token(Cursor&  cur)
+{
+  Token  tok;
+
+  skip_spaces_and_newline(cur);
+
+  auto  const c = *cur;
+
+    if(c)
+    {
+        if(c == '\'')
+        {
+          cur += 1;
+
+          tok = read_character_literal(cur);
+        }
+
+      else
+        if(c == '\"')
+        {
+          cur += 1;
+
+          tok = read_string_literal(cur);
+        }
+
+      else
+        if(cur.compare('/','*'))
+        {
+          cur += 2;
+
+          skip_blockstyle_comment(cur);
+        }
+
+      else
+        if(cur.compare('/','/'))
+        {
+          cur += 2;
+
+          skip_linestyle_comment(cur);
+        }
+
+      else
+        if(c == '0')
+        {
+          cur += 1;
+
+          tok = read_number_literal_that_begins_by_zero(cur);
+        }
+
+      else
+        if((c >= '1') &&
+           (c <= '9'))
+        {
+          tok = read_decimal_number_literal(cur);
+        }
+
+      else
+        if(isalpha(c) || (c == '_'))
+        {
+          tok = read_identifier(cur);
+        }
+
+      else
+        {
+    printf("%c\n",c);
+//          throw Error(cur,"処理不可の文字");
+cur += 1;
+        }
+    }
+
+
+  return std::move(tok);
+}
+
+
+namespace{
+char const* 
+const keyword_table[] =
+{
+#include"pp_keywords.inc"
+};
+}
+
+
+TokenString
 process_main(Cursor  cur, Context&  ctx)
 {
-  TokenList  ls;
+  TokenString  toks;
 
     if(*cur == '#')
     {
@@ -113,28 +188,12 @@ process_main(Cursor  cur, Context&  ctx)
 
       Cursor  cocur(s);
 
-      join(ls,process_directive(cocur,ctx));
+      toks = process_directive(cocur,ctx);
     }
 
 
     for(;;)
     {
-      auto  const c = *cur;
-
-        if(!c)
-        {
-          break;
-        }
-
-      else
-        if(cur.compare('\\','\n'))
-        {
-          cur += 1;
-
-          cur.newline();
-        }
-
-      else
         if(cur.compare('\n','#'))
         {
           cur += 1;
@@ -145,87 +204,55 @@ process_main(Cursor  cur, Context&  ctx)
 
           Cursor  cocur(s);
 
-          join(ls,process_directive(cocur,ctx));
-        }
-
-      else
-        if(c == '\'')
-        {
-          cur += 1;
-
-          ls.emplace_back(read_character_literal(cur));
-        }
-
-      else
-        if(c == '\"')
-        {
-          cur += 1;
-
-          ls.emplace_back(read_string_literal(cur));
-        }
-
-      else
-        if(cur.compare('/','*'))
-        {
-          cur += 2;
-
-          read_blockstyle_comment(cur);
-        }
-
-      else
-        if(cur.compare('/','/'))
-        {
-          cur += 2;
-
-          read_linestyle_comment(cur);
-        }
-
-      else
-        if(c == '0')
-        {
-          cur += 1;
-
-          ls.emplace_back(read_number_literal_that_begins_by_zero(cur));
-        }
-
-      else
-        if((c >= '1') &&
-           (c <= '9'))
-        {
-          ls.emplace_back(read_decimal_number_literal(cur));
-        }
-
-      else
-        if(isalpha(c) || (c == '_'))
-        {
-          auto  id = read_identifier(cur);
-
-          join(ls,process_identifier(std::move(id),cur,ctx));
-        }
-
-      else
-        if((c ==  ' ') ||
-           (c == '\t') ||
-           (c == '\r'))
-        {
-          cur += 1;
-        }
-
-      else
-        if(c == '\n')
-        {
-          cur.newline();
+          toks += process_directive(cocur,ctx);
         }
 
       else
         {
-printf("%c\n",c);
-          throw Error(cur,"処理不可の文字");
+          auto  tok = read_token(cur);
+
+            if(!tok)
+            {
+              break;
+            }
+
+
+            if(tok == TokenKind::identifier)
+            {
+              auto&  id = tok->string;
+
+              bool  flag = false;
+
+                for(auto  p: keyword_table)
+                {
+                    if(id == p)
+                    {
+                      Token::change_identifier_to_keyword(tok);
+
+                      toks.emplace_back(std::move(tok));
+
+                      flag = true;
+
+                      break;
+                    }
+                }
+
+
+                if(!flag)
+                {
+                  toks += process_identifier(std::move(tok),cur,ctx);
+                }
+            }
+
+          else
+            {
+              toks.emplace_back(std::move(tok));
+            }
         }
     }
 
 
-  return std::move(ls);
+  return std::move(toks);
 }
 
 
@@ -239,27 +266,25 @@ main(int  argc, char**  argv)
 
   preprocessing::Context  ctx;
 
-  preprocessing::TokenList  ls;
+  preprocessing::TokenString  toks;
 
     try
     {
-      ls = preprocessing::process_main(Cursor(s),ctx);
+      toks = preprocessing::process_main(Cursor(s),ctx);
     }
 
 
     catch(Error&  e)
     {
+      e.cursor.print();
+
       printf("%s\n",e.what());
     }
 
 
-    for(auto&  tok: ls)
-    {
-      tok.print();
-
-      printf("\n");
-    }
-
+  toks.print();
+  ctx.print();
+  
 
   return 0;
 }

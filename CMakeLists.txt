@@ -48,6 +48,7 @@ endif()
 set(SOURCES
   operand.cpp
   expression.cpp
+  preprocessing/pp_unicode.cpp
   preprocessing/pp_token.cpp
   preprocessing/pp_operand.cpp
   preprocessing/pp_expression.cpp
@@ -55,10 +56,9 @@ set(SOURCES
   preprocessing/pp_macro__replace_text.cpp
   preprocessing/pp_context.cpp
   preprocessing/pp.cpp
-  preprocessing/pp__read_comment.cpp
   preprocessing/pp__read_argument.cpp
   preprocessing/pp__read_literal.cpp
-  preprocessing/pp__read_spaces.cpp
+  preprocessing/pp__skip.cpp
   preprocessing/pp__process_directive.cpp
   preprocessing/pp__read_include.cpp
   preprocessing/pp__read_define.cpp

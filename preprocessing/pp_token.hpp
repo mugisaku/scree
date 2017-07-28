@@ -41,8 +41,7 @@ Operator
 };
 
 
-struct Token;
-using TokenList = std::vector<Token>;
+struct TokenString;
 
 
 enum class
@@ -63,6 +62,8 @@ TokenKind
   identifier,
   keyword,
   operator_,
+
+  token_string,
 
 };
 
@@ -85,6 +86,8 @@ TokenData
   std::u32string    u32string;
 
   Operator  operator_;
+
+  TokenString*  token_string;
 
    TokenData(){}
   ~TokenData(){}
@@ -132,6 +135,7 @@ public:
   void  print() const;
 
   static std::string  move_string(Token&&  tok){return std::move(tok.data.string);}
+  static void  change_identifier_to_keyword(Token&  tok){tok.kind = TokenKind::keyword;}
 
 };
 

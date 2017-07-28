@@ -69,7 +69,7 @@ read_argument_list(Cursor&  cur)
 
     for(;;)
     {
-      read_spaces_and_newline(cur);
+      skip_spaces_and_newline(cur);
 
       auto  const c = *cur;
 

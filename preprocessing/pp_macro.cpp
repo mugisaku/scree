@@ -50,6 +50,36 @@ get_value(Context const&  ctx) const
 }
 
 
+void
+Macro::
+print() const
+{
+  printf("マクロ: %s",name.data());
+
+    if(function_style_flag)
+    {
+      printf("(");
+
+        for(auto&  p: parameter_list)
+        {
+          printf("%s,",p.data());
+        }
+
+
+        if(variable_arguments_flag)
+        {
+          printf("...");
+        }
+
+
+      printf(")");
+    }
+
+
+  printf("  %s",text.data());
+}
+
+
 }
 
 
