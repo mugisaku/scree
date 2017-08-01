@@ -1,6 +1,6 @@
 #include"pp.hpp"
 #include"pp_macro.hpp"
-#include"cursor.hpp"
+#include"pp_cursor.hpp"
 
 
 
@@ -39,6 +39,14 @@ find_parameter(std::string const&  id) const
 
 
   return -1;
+}
+
+
+bool
+Macro::
+test_number_of_arguments(ArgumentList const&  argls) const
+{
+  return(!variable_arguments_flag && (parameter_list.size() != argls.size()));
 }
 
 

@@ -20,31 +20,13 @@ read_argument(Cursor&  cur)
     {
       auto  const c = *cur;
 
-        if(c == '\\')
-        {
-          cur += 1;
-
-            if(isprint(c) || (c == ' '))
-            {
-              cur += 1;
-
-              s.push_back(c);
-            }
-
-          else
-            {
-              throw Error(cur,"引数の途中で制御文字");
-            }
-        }
-
-      else
         if((c == ',') || (c == ')'))
         {
           break;
         }
 
       else
-        if(isprint(c) || (c == ' '))
+        if(isprint(c))
         {
           cur += 1;
 
@@ -65,7 +47,28 @@ read_argument(Cursor&  cur)
 ArgumentList
 read_argument_list(Cursor&  cur)
 {
+  skip_spaces_and_newline(cur);
+
+    if(*cur == ')')
+    {
+      cur += 1;
+
+      return ArgumentList();
+    }
+
+
   ArgumentList  argls;
+
+    if(isprint(*cur))
+    {
+      argls.emplace_back(read_argument(cur));
+    }
+
+  else
+    {
+      throw Error(cur,"第一引数に処理不可の文字");
+    }
+
 
     for(;;)
     {
@@ -84,17 +87,23 @@ read_argument_list(Cursor&  cur)
         if(c == ',')
         {
           cur += 1;
+
+          skip_spaces_and_newline(cur);
+
+            if(isprint(*cur))
+            {
+              argls.emplace_back(read_argument(cur));
+            }
+
+          else
+            {
+              throw Error(cur,"第二引数以降に処理不可の文字");
+            }
         }
 
       else
-        if(isprint(c) || (c == ' '))
         {
-          argls.emplace_back(read_argument(cur));
-        }
-
-      else
-        {
-          throw Error(cur,"引数の途中で処理不可の文字1");
+          throw Error(cur,"第二引数以降に処理不可の文字");
         }
     }
 

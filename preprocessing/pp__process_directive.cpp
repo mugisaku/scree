@@ -7,111 +7,16 @@ namespace preprocessing{
 namespace{
 
 
-Expression
-read_expression(Cursor&  cur, Context const&  ctx)
+void
+read_undef(Cursor&  cur, Context&  ctx)
 {
+  ctx.remove_macro(read_identifier(cur));
 }
 
 
 void
-read_undef(Cursor  cur, Context&  ctx)
+read_print(Cursor&  cur)
 {
-  skip_spaces(cur);
-
-  ctx.remove_macro(read_identifier(cur)->string);
-}
-
-
-void
-read_ifdef(Cursor  cur, Context&  ctx)
-{
-  skip_spaces(cur);
-
-  auto  id = read_identifier(cur);
-}
-
-
-void
-read_ifndef(Cursor  cur, Context&  ctx)
-{
-  skip_spaces(cur);
-
-  auto  id = read_identifier(cur);
-}
-
-
-void
-read_if(Cursor  cur, Context&  ctx)
-{
-}
-
-
-void
-read_elif(Cursor  cur, Context&  ctx)
-{
-  auto  const st = ctx.get_state();
-
-    if(st == ContextState::running)
-    {
-      ctx.change_state(ContextState::looking_for_endif);
-    }
-
-  else
-    if(st == ContextState::looking_for_next_block)
-    {
-      ctx.change_state(ContextState::looking_for_endif);
-    }
-
-  else
-    {
-      throw Error(cur,"不正なelif");
-    }
-}
-
-
-void
-read_else(Cursor  cur, Context&  ctx)
-{
-  auto  const st = ctx.get_state();
-
-    if(st == ContextState::running)
-    {
-      ctx.change_state(ContextState::looking_for_endif);
-    }
-
-  else
-    if(st == ContextState::looking_for_next_block)
-    {
-      ctx.change_state(ContextState::running);
-    }
-
-  else
-    {
-      throw Error(cur,"不正なelse");
-    }
-}
-
-
-void
-read_endif(Cursor  cur, Context&  ctx)
-{
-  auto  const st = ctx.get_state();
-
-    if(st == ContextState::running)
-    {
-        if(!ctx.pop_state())
-        {
-          throw Error(cur,"不正なendif");
-        }
-    }
-}
-
-
-void
-read_print(Cursor  cur)
-{
-  skip_spaces(cur);
-
   printf("[PRINT] ");
 
     for(;;)
@@ -130,6 +35,9 @@ read_print(Cursor  cur)
           break;
         }
     }
+
+
+  printf("\n");
 }
 
 
@@ -143,23 +51,25 @@ process_directive(Cursor  cur, Context&  ctx)
 
   skip_spaces(cur);
 
+  auto  const flag = !ctx.test_locked_flag();
+
     if(isalpha(*cur) || (*cur == '_'))
     {
-      auto  tok = read_identifier(cur);
+      auto  id = read_identifier(cur);
 
-      auto&  id = tok->string;
+      skip_space(cur);
 
-           if(id == "include"){ls = read_include(cur,ctx);}
-      else if(id == "define"){read_define(cur,ctx);}
-      else if(id == "undef"){read_undef(cur,ctx);}
-      else if(id == "ifdef"){read_ifdef(cur,ctx);}
-      else if(id == "ifndef"){read_ifndef(cur,ctx);}
-      else if(id == "if"){read_if(cur,ctx);}
-      else if(id == "elif"){read_elif(cur,ctx);}
-      else if(id == "else"){read_elif(cur,ctx);}
-      else if(id == "endif"){read_endif(cur,ctx);}
-      else if(id == "error"){throw Error(cur,"#error");}
-      else if(id == "print"){read_print(cur);}
+           if(id == "include"){if(flag){ls = read_include(cur,ctx);}}
+      else if(id == "define"){if(flag){read_define(cur,ctx);}}
+      else if(id == "undef" ){if(flag){read_undef(cur,ctx);}}
+      else if(id == "ifdef" ){ctx.accept_if_directive(IfDirectiveKind::ifdef,cur.to_pointer());}
+      else if(id == "ifndef"){ctx.accept_if_directive(IfDirectiveKind::ifndef,cur.to_pointer());}
+      else if(id == "if"    ){ctx.accept_if_directive(IfDirectiveKind::if_,cur.to_pointer());}
+      else if(id == "elif"  ){ctx.accept_if_directive(IfDirectiveKind::elif,cur.to_pointer());}
+      else if(id == "else"  ){ctx.accept_if_directive(IfDirectiveKind::else_,cur.to_pointer());}
+      else if(id == "endif" ){ctx.accept_if_directive(IfDirectiveKind::endif,cur.to_pointer());}
+      else if(id == "error"){if(flag){throw Error(cur,"#error");}}
+      else if(id == "print"){if(flag){read_print(cur);}}
       else{throw Error(cur,"未対応のディレクティブ");}
     }
 

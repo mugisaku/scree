@@ -46,15 +46,45 @@ load_file(const char*  path)
 namespace preprocessing{
 
 
+Token
+process_defined_operator(Cursor&  cur, Context const&  ctx)
+{
+    if(isalpha(*cur) || (*cur == '_'))
+    {
+      auto  id = read_identifier(cur);
+
+        if(ctx.find_macro(id))
+        {
+          return Token(TokenKind::decimal_integer,std::string("1"));
+        }
+    }
+
+  else
+    if(*cur == '(')
+    {
+    }
+
+  else
+    {
+      throw Error(cur,"defined演算子の後に有効な要素が無い");
+    }
+
+
+  return Token(TokenKind::decimal_integer,std::string("0"));
+}
+
+
 TokenString
-process_identifier(Token&&  id, Cursor&  cur, Context&  ctx)
+process_identifier(Token&&  id, Cursor&  cur, Context const&  ctx)
 {
   TokenString  ls;
 
-  auto  macro = ctx.find_macro(id->string);
+  auto  macro = ctx.find_macro(*id);
 
     if(macro)
     {
+      auto&  text = macro->get_text();
+
         if(macro->is_function_style())
         {
           skip_spaces_and_newline(cur);
@@ -69,14 +99,19 @@ process_identifier(Token&&  id, Cursor&  cur, Context&  ctx)
 
           auto  argls = read_argument_list(cur);
 
-          auto  s = macro->replace_text(argls);
+            if(!macro->test_number_of_arguments(argls))
+            {
+              throw Error(Cursor(),"引数の数が一致しません");
+            }
 
-          ls = process_main(Cursor(s),ctx);
+
+
+          ls = process_text(text,ctx,&argls);
         }
 
       else
         {
-          ls = process_main(Cursor(macro->get_text()),ctx);
+          ls = process_text(text,ctx);
         }
     }
 
@@ -90,94 +125,11 @@ process_identifier(Token&&  id, Cursor&  cur, Context&  ctx)
 }
 
 
-Token
-read_token(Cursor&  cur)
-{
-  Token  tok;
-
-  skip_spaces_and_newline(cur);
-
-  auto  const c = *cur;
-
-    if(c)
-    {
-        if(c == '\'')
-        {
-          cur += 1;
-
-          tok = read_character_literal(cur);
-        }
-
-      else
-        if(c == '\"')
-        {
-          cur += 1;
-
-          tok = read_string_literal(cur);
-        }
-
-      else
-        if(cur.compare('/','*'))
-        {
-          cur += 2;
-
-          skip_blockstyle_comment(cur);
-        }
-
-      else
-        if(cur.compare('/','/'))
-        {
-          cur += 2;
-
-          skip_linestyle_comment(cur);
-        }
-
-      else
-        if(c == '0')
-        {
-          cur += 1;
-
-          tok = read_number_literal_that_begins_by_zero(cur);
-        }
-
-      else
-        if((c >= '1') &&
-           (c <= '9'))
-        {
-          tok = read_decimal_number_literal(cur);
-        }
-
-      else
-        if(isalpha(c) || (c == '_'))
-        {
-          tok = read_identifier(cur);
-        }
-
-      else
-        {
-    printf("%c\n",c);
-//          throw Error(cur,"処理不可の文字");
-cur += 1;
-        }
-    }
-
-
-  return std::move(tok);
-}
-
-
-namespace{
-char const* 
-const keyword_table[] =
-{
-#include"pp_keywords.inc"
-};
-}
-
-
 TokenString
-process_main(Cursor  cur, Context&  ctx)
+process_file(std::string const&  s, Context&  ctx)
 {
+  Cursor  cur(s);
+
   TokenString  toks;
 
     if(*cur == '#')
@@ -186,9 +138,7 @@ process_main(Cursor  cur, Context&  ctx)
 
       auto  s = read_directive(cur);
 
-      Cursor  cocur(s);
-
-      toks = process_directive(cocur,ctx);
+      toks = process_directive(Cursor(s),ctx);
     }
 
 
@@ -202,9 +152,81 @@ process_main(Cursor  cur, Context&  ctx)
 
           auto  s = read_directive(cur);
 
-          Cursor  cocur(s);
+          toks = process_directive(Cursor(s),ctx);
+        }
 
-          toks += process_directive(cocur,ctx);
+      else
+        if(cur.compare('\n'))
+        {
+          cur.newline();
+        }
+
+      else
+        {
+          skip_spaces(cur);
+
+            if(!*cur)
+            {
+              break;
+            }
+
+          else
+            {
+              auto  tok = read_token(cur);
+
+                if(!tok)
+                {
+                  break;
+                }
+
+              else
+                if(!ctx.test_locked_flag())
+                {
+                    if(tok == TokenKind::identifier)
+                    {
+                      toks += process_identifier(std::move(tok),cur,ctx);
+                    }
+
+                  else
+                    {
+                      toks.emplace_back(std::move(tok));
+                    }
+                }
+            }
+        }
+    }
+
+
+  toks.emplace_back(Token());
+
+  return std::move(toks);
+}
+
+
+TokenString
+process_text(std::string const&  s, Context const&  ctx, ArgumentList const*  argls)
+{
+  Cursor  cur(s);
+
+  TokenString  toks;
+
+    for(;;)
+    {
+      skip_spaces_and_newline(cur);
+
+        if(!*cur)
+        {
+          break;
+        }
+
+      else
+        if(cur.compare('#','#'))
+        {
+        }
+
+      else
+        if(cur.compare('#'))
+        {
         }
 
       else
@@ -216,41 +238,24 @@ process_main(Cursor  cur, Context&  ctx)
               break;
             }
 
-
-            if(tok == TokenKind::identifier)
+          else
+            if(!ctx.test_locked_flag())
             {
-              auto&  id = tok->string;
-
-              bool  flag = false;
-
-                for(auto  p: keyword_table)
-                {
-                    if(id == p)
-                    {
-                      Token::change_identifier_to_keyword(tok);
-
-                      toks.emplace_back(std::move(tok));
-
-                      flag = true;
-
-                      break;
-                    }
-                }
-
-
-                if(!flag)
+                if(tok == TokenKind::identifier)
                 {
                   toks += process_identifier(std::move(tok),cur,ctx);
                 }
-            }
 
-          else
-            {
-              toks.emplace_back(std::move(tok));
+              else
+                {
+                  toks.emplace_back(std::move(tok));
+                }
             }
         }
     }
 
+
+  toks.emplace_back(Token());
 
   return std::move(toks);
 }
@@ -270,11 +275,11 @@ main(int  argc, char**  argv)
 
     try
     {
-      toks = preprocessing::process_main(Cursor(s),ctx);
+      toks = preprocessing::process_file(s,ctx);
     }
 
 
-    catch(Error&  e)
+    catch(preprocessing::Error&  e)
     {
       e.cursor.print();
 

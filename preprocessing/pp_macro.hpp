@@ -37,8 +37,6 @@ public:
 
   bool  operator==(std::string const&  name_) const{return name == name_;}
 
-  std::string  replace_text(ArgumentList&  argls) const;
-
   std::string const&  get_text() const{return text;}
 
   void  set_text(std::string&&  txt){text = std::move(txt);}
@@ -48,6 +46,8 @@ public:
   void   set_function_style_flag(){function_style_flag = true;}
 
   bool  is_function_style() const{return function_style_flag;}
+
+  bool  test_number_of_arguments(ArgumentList const&  argls) const;
 
   int  get_value(Context const&  ctx) const;
 

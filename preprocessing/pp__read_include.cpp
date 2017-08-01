@@ -39,12 +39,10 @@ read_path(Cursor&  cur)
 
 
 TokenString
-read_include(Cursor  cur, Context&  ctx)
+read_include(Cursor&  cur, Context&  ctx)
 {
   std::string  content;
   std::string     path;
-
-  skip_spaces(cur);
 
     if(*cur == '<')
     {
@@ -97,9 +95,7 @@ read_include(Cursor  cur, Context&  ctx)
 
   fclose(f);
 
-  Cursor  cocur(content);
-
-  return process_main(cocur,ctx);
+  return process_file(content,ctx);
 }
 
 

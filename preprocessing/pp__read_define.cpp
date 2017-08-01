@@ -27,7 +27,7 @@ read_parameter_list(Cursor&  cur)
       else
         if(isalpha(c) || (c == '_'))
         {
-          parls.emplace_back(Token::move_string(read_identifier(cur)));
+          parls.emplace_back(read_identifier(cur));
 
           skip_spaces(cur);
 
@@ -50,13 +50,11 @@ read_parameter_list(Cursor&  cur)
 
 
 void
-read_define(Cursor  cur, Context&  ctx)
+read_define(Cursor&  cur, Context&  ctx)
 {
-  skip_spaces(cur);
-
   auto  id = read_identifier(cur);
 
-    if(ctx.find_macro(id->string))
+    if(ctx.find_macro(id))
     {
       throw Error(cur,"既に定義済みの識別子");
     }
@@ -64,7 +62,7 @@ read_define(Cursor  cur, Context&  ctx)
 
   skip_spaces(cur);
 
-  Macro  macro(Token::move_string(std::move(id)));
+  Macro  macro(std::move(id));
 
     if(*cur == '(')
     {
