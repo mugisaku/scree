@@ -3,6 +3,7 @@
 
 
 #include"pp_macro.hpp"
+#include<list>
 
 
 namespace preprocessing{

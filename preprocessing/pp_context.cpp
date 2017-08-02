@@ -58,9 +58,19 @@ test_value(Cursor&  cur, Context const&  ctx)
     }
 
 
-  std::string  s;
+  std::vector<char>  unop_stack;
 
-  auto  ls = process_text(s,ctx);
+/*
+    for(;;)
+    {
+      auto  const c = *cur;
+
+        if(ispunct(c))
+        {
+        }
+    }
+*/
+
 
   return true;
 }

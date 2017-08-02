@@ -2,7 +2,6 @@
 #define PP_TokenString_HPP_INCLUDED
 
 
-#include<vector>
 #include"pp_token.hpp"
 
 
@@ -10,35 +9,59 @@ namespace preprocessing{
 
 
 class
-TokenString: public std::vector<Token>
+TokenString
 {
+  static Token  null;
+
+  Token*  pointer=&null;
+
+  size_t  allocated_length=0;
+
+  size_t  length=0;
+
+  void  extend();
+
 public:
-  void  operator+=(TokenString&&  rhs)
-  {
-      if(size() && !back())
-      {
-        pop_back();
-      }
+  using       iterator = Token      *;
+  using const_iterator = Token const*;
+
+  TokenString(){}
+  TokenString(std::string&&  s){}
+  TokenString(TokenString const&  rhs) noexcept{*this = rhs;}
+  TokenString(TokenString&&       rhs) noexcept{*this = std::move(rhs);}
+ ~TokenString(){clear();}
 
 
-      for(auto&&  tok: rhs)
-      {
-          if(tok)
-          {
-            this->emplace_back(std::move(tok));
-          }
-      }
-  }
+  TokenString&  operator=(TokenString const&  rhs) noexcept;
+  TokenString&  operator=(TokenString&&       rhs) noexcept;
 
-  void  print() const
-  {
-      for(auto&  tok: *this)
-      {
-        tok.print();
+  void  operator+=(Token const&  tok);
+  void  operator+=(Token&&       tok);
+  void  operator+=(TokenString const&  rhs);
+  void  operator+=(TokenString&&       rhs);
 
-        printf("\n");
-      }
-  }
+  void  clear();
+
+  size_t  size() const{return length;}
+  bool  empty() const{return !length;}
+
+  void  pop_back(){length -= 1;}
+
+  Token const&  front() const{return pointer[       0];}
+  Token const&   back() const{return pointer[length-1];}
+
+  Token&  front(){return pointer[       0];}
+  Token&   back(){return pointer[length-1];}
+
+  Token const*  data() const{return pointer;}
+
+  iterator  begin() const{return pointer;}
+  iterator    end() const{return pointer+length;}
+
+  const_iterator  cbegin() const{return pointer;}
+  const_iterator    cend() const{return pointer+length;}
+
+  void  print() const;
 
 };
 

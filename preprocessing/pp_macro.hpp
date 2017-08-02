@@ -5,14 +5,14 @@
 #include<algorithm>
 #include<string>
 #include<vector>
-#include<list>
+#include"pp_TokenString.hpp"
 
 
 namespace preprocessing{
 
 
 using ParameterList = std::vector<std::string>;
-using  ArgumentList = ParameterList;
+using  ArgumentList = std::vector<TokenString>;
 
 
 struct Context;
@@ -28,7 +28,7 @@ Macro
   bool      function_style_flag=false;
   bool  variable_arguments_flag=false;
 
-  std::string  text;
+  TokenString  token_string;
 
   int  find_parameter(std::string const&  id) const;
 
@@ -37,17 +37,21 @@ public:
 
   bool  operator==(std::string const&  name_) const{return name == name_;}
 
-  std::string const&  get_text() const{return text;}
+  std::string const&  get_name() const{return name;}
+  TokenString const&  get_token_string() const{return token_string;}
 
-  void  set_text(std::string&&  txt){text = std::move(txt);}
+  void  set_token_string(TokenString&&  toks){token_string = std::move(toks);}
 
-  void  set_parameter_list(ParameterList&&  ls);
+  ParameterList const&  get_parameter_list() const{return parameter_list;}
+  void                  set_parameter_list(ParameterList&&  ls);
 
   void   set_function_style_flag(){function_style_flag = true;}
 
   bool  is_function_style() const{return function_style_flag;}
 
   bool  test_number_of_arguments(ArgumentList const&  argls) const;
+
+  TokenString  expand(Context const&  ctx, ArgumentList const*  args) const;
 
   int  get_value(Context const&  ctx) const;
 

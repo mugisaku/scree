@@ -9,6 +9,7 @@
 #include<string>
 #include<cstdio>
 #include<algorithm>
+#include<cctype>
 
 
 namespace preprocessing{
@@ -26,25 +27,24 @@ void  skip_linestyle_comment( Cursor&  cur);
 std::string  read_quoted(    Cursor&  cur, char  key_char);
 std::string  read_identifier(Cursor&  cur                );
 
-
-std::string   read_argument(     Cursor&  cur);
-ArgumentList  read_argument_list(Cursor&  cur);
-
+constexpr bool  isident0(char  c){return(isalpha(c) || (c == '_'));}
+constexpr bool  isidentn(char  c){return(isalnum(c) || (c == '_'));}
 
 
-std::string     read_directive(Cursor&  cur);
-TokenString  process_directive(Cursor  cur, Context&  ctx);
+ArgumentList  read_argument_list(TokenString::const_iterator&  cur, Context const&  ctx);
+
+
 
 TokenString  read_include(Cursor&  cur, Context&  ctx);
 void          read_define(Cursor&  cur, Context&  ctx);
 
 
-TokenString  process_identifier(Token&&  id, Cursor&  cur, Context const&  ctx);
-
 Token  read_token(Cursor&  cur);
 
-TokenString  process_file(std::string const&  s, Context&        ctx);
-TokenString  process_text(std::string const&  s, Context const&  ctx, ArgumentList const*  argls=nullptr);
+TokenString  process_file(std::string const&  s);
+TokenString  process_text(std::string const&  s, Context const&  ctx);
+TokenString  process_text(Cursor&  cur, Context const&  ctx);
+TokenString  process_token_string(TokenString&&  src, Context&  ctx);
 
 
 #define report  printf("[%s %s %4d]\n",__FILE__,__func__,__LINE__)

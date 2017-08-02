@@ -46,7 +46,7 @@ bool
 Macro::
 test_number_of_arguments(ArgumentList const&  argls) const
 {
-  return(!variable_arguments_flag && (parameter_list.size() != argls.size()));
+  return(!variable_arguments_flag && (parameter_list.size() == argls.size()));
 }
 
 
@@ -84,7 +84,11 @@ print() const
     }
 
 
-  printf("  %s",text.data());
+  printf("{\n");
+
+  token_string.print();
+
+  printf("\n}\n");
 }
 
 

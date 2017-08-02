@@ -14,11 +14,11 @@ namespace{
 
 template<typename  IS>
 std::string
-read_number_literal(Cursor&  cur, IS  is)
+read_number_literal(char const*  prefix, Cursor&  cur, IS  is, int  n=1)
 {
-  cur += 1;
+  cur += n;
 
-  std::string  s;
+  std::string  s(prefix);
 
     for(;;)
     {
@@ -62,7 +62,7 @@ read_identifier(Cursor&  cur)
     {
       auto  c = *cur;
 
-        if(isalnum(c) || (c == '_'))
+        if(isidentn(c))
         {
           cur += 1;
 
@@ -185,21 +185,23 @@ read_token(Cursor&  cur)
 
           auto  const cc = *cur;
 
-          tok = (((cc == 'b') || (cc == 'B'))? Token(TokenKind::binary_integer     ,read_number_literal(cur,     isbinary)):
-                 ((cc == 'o') || (cc == 'O'))? Token(TokenKind::octal_integer      ,read_number_literal(cur,      isoctal)):
-                 ((cc == 'x') || (cc == 'X'))? Token(TokenKind::hexadecimal_integer,read_number_literal(cur,ishexadecimal)):
-                                               Token(TokenKind::decimal_integer    ,std::string("0")                      ));
+          tok = ((cc == 'b')? Token(TokenKind::integer,read_number_literal("0b",cur,     isbinary)):
+                 (cc == 'B')? Token(TokenKind::integer,read_number_literal("0B",cur,     isbinary)):
+                 (cc == 'o')? Token(TokenKind::integer,read_number_literal("0o",cur,      isoctal)):
+                 (cc == 'O')? Token(TokenKind::integer,read_number_literal("0O",cur,      isoctal)):
+                 (cc == 'x')? Token(TokenKind::integer,read_number_literal("0x",cur,ishexadecimal)):
+                 (cc == 'X')? Token(TokenKind::integer,read_number_literal("0X",cur,ishexadecimal)):
+                              Token(TokenKind::integer,std::string("0")                          ));
         }
 
       else
-        if((c >= '1') &&
-           (c <= '9'))
+        if(isdigit(c))
         {
-          tok = Token(TokenKind::decimal_integer,read_number_literal(cur,isdecimal));
+          tok = Token(TokenKind::integer,read_number_literal("",cur,isdecimal,0));
         }
 
       else
-        if(isalpha(c) || (c == '_'))
+        if(isident0(c))
         {
           tok = Token(TokenKind::identifier,read_identifier(cur));
         }
@@ -214,7 +216,7 @@ read_token(Cursor&  cur)
 
       else
         {
-          throw Error(cur,"処理不可の文字");
+          throw Error(cur,"処理不可の文字 %c(%d)",c,c);
         }
     }
 

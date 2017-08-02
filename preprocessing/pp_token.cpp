@@ -12,6 +12,42 @@ namespace preprocessing{
 
 
 
+std::string
+Token::
+to_string() const
+{
+  std::string  s;
+
+    switch(kind)
+    {
+  case(TokenKind::null):
+      break;
+  case(TokenKind::integer):
+  case(TokenKind::operator_):
+  case(TokenKind::identifier):
+      s.append(string);
+      break;
+  case(TokenKind::string):
+      s.push_back('\"');
+      s.append(string);
+      s.push_back('\"');
+      break;
+  case(TokenKind::character):
+      s.push_back('\'');
+      s.append(string);
+      s.push_back('\'');
+      break;
+  case(TokenKind::directive):
+      s.push_back('#');
+      s.append(string);
+      break;
+    }
+
+
+  return std::move(s);
+}
+
+
 void
 Token::
 print() const
@@ -21,16 +57,7 @@ print() const
   case(TokenKind::null):
       printf(" NULL ");
       break;
-  case(TokenKind::binary_integer):
-      printf(" 0b%s ",string.data());
-      break;
-  case(TokenKind::octal_integer):
-      printf(" 0o%s ",string.data());
-      break;
-  case(TokenKind::hexadecimal_integer):
-      printf(" 0x%s ",string.data());
-      break;
-  case(TokenKind::decimal_integer):
+  case(TokenKind::integer):
   case(TokenKind::operator_):
   case(TokenKind::identifier):
       printf(" %s ",string.data());
@@ -40,6 +67,9 @@ print() const
       break;
   case(TokenKind::character):
       printf(" \'%s\' ",string.data());
+      break;
+  case(TokenKind::directive):
+      printf("#%s\n",string.data());
       break;
     }
 }

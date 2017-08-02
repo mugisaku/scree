@@ -25,7 +25,7 @@ read_parameter_list(Cursor&  cur)
         }
 
       else
-        if(isalpha(c) || (c == '_'))
+        if(isident0(c))
         {
           parls.emplace_back(read_identifier(cur));
 
@@ -60,8 +60,6 @@ read_define(Cursor&  cur, Context&  ctx)
     }
 
 
-  skip_spaces(cur);
-
   Macro  macro(std::move(id));
 
     if(*cur == '(')
@@ -71,41 +69,25 @@ read_define(Cursor&  cur, Context&  ctx)
       macro.set_function_style_flag();
 
       macro.set_parameter_list(read_parameter_list(cur));
-
-      skip_spaces(cur);
     }
 
 
-  std::string  text;
+  TokenString  toks;
 
     for(;;)
     {
-      auto  const c = *cur;
+      skip_spaces(cur);
 
-        if(!c)
+      toks += read_token(cur);
+
+        if(!toks.back())
         {
           break;
         }
-
-      else
-        {
-          cur += 1;
-
-          text.push_back(c);
-        }
     }
 
 
-    if(text.empty())
-    {
-      macro.set_text(std::string(macro.is_function_style()? "":"1"));
-    }
-
-  else
-    {
-      macro.set_text(std::move(text));
-    }
-
+  macro.set_token_string(std::move(toks));
 
   ctx.append_macro(std::move(macro));
 }

@@ -5,6 +5,7 @@
 #include<string>
 #include<cstring>
 #include<cstdio>
+#include<cstdarg>
 #include<exception>
 
 
@@ -47,12 +48,21 @@ public:
 struct
 Error: public std::exception
 {
-  Cursor       const  cursor;
-  char const*  const message;
+  Cursor  const  cursor;
 
-  Error(Cursor const&  cur, char const*  msg=""): cursor(cur), message(msg){}
+  char  buffer[256];
 
-  char const*  what() noexcept{return message;}
+  Error(Cursor const&  cur, char const*  fmt="", ...): cursor(cur)
+  {
+    va_list  ap;
+    va_start(ap,fmt);
+
+    vsnprintf(buffer,sizeof(buffer),fmt,ap);
+
+    va_end(ap);
+  }
+
+  char const*  what() noexcept{return buffer;}
 
 };
 

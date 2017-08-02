@@ -74,7 +74,11 @@ Cursor::
 print() const
 {
   printf("Line:%4d\n",line_count+1);
-  printf("%c\n",*pointer);
+
+    if(pointer)
+    {
+      printf("%c\n",*pointer);
+    }
 }
 
 

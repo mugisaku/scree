@@ -50,14 +50,16 @@ set(SOURCES
   expression.cpp
   preprocessing/pp_unicode.cpp
   preprocessing/pp_token.cpp
+  preprocessing/pp_TokenString.cpp
   preprocessing/pp_macro.cpp
+  preprocessing/pp_macro__expand.cpp
   preprocessing/pp_context.cpp
   preprocessing/pp_cursor.cpp
   preprocessing/pp.cpp
   preprocessing/pp__read_token.cpp
   preprocessing/pp__read_argument.cpp
   preprocessing/pp__skip.cpp
-  preprocessing/pp__process_directive.cpp
+  preprocessing/pp__process_token_string.cpp
   preprocessing/pp__read_include.cpp
   preprocessing/pp__read_define.cpp
 )

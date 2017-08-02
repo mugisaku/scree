@@ -15,14 +15,12 @@ enum class
 TokenKind
 {
   null,
-  binary_integer,
-  octal_integer,
-  decimal_integer,
-  hexadecimal_integer,
+  integer,
   character,
   string,
   identifier,
   operator_,
+  directive,
 
 };
 
@@ -41,11 +39,17 @@ public:
 
   bool  operator==(TokenKind  k) const{return kind == k;}
   bool  operator==(std::string const&  s) const{return string == s;}
+  bool  operator==(char  c) const{return(string[0] == c);}
+  bool  operator!=(char  c) const{return(string[0] != c);}
 
   operator bool() const{return kind != TokenKind::null;}
 
   std::string const&  operator* () const{return  string;}
   std::string const*  operator->() const{return &string;}
+
+  std::string  to_string() const;
+
+  std::string  release(){return std::move(string);}
 
   void  print() const;
 

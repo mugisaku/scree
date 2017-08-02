@@ -46,87 +46,59 @@ load_file(const char*  path)
 namespace preprocessing{
 
 
-Token
-process_defined_operator(Cursor&  cur, Context const&  ctx)
+std::string
+read_directive(Cursor&  cur)
 {
-    if(isalpha(*cur) || (*cur == '_'))
-    {
-      auto  id = read_identifier(cur);
+  std::string  s;
 
-        if(ctx.find_macro(id))
+    for(;;)
+    {
+      auto  const c = *cur;
+
+        if(c == '\n')
         {
-          return Token(TokenKind::decimal_integer,std::string("1"));
+          break;
         }
-    }
 
-  else
-    if(*cur == '(')
-    {
-    }
-
-  else
-    {
-      throw Error(cur,"defined演算子の後に有効な要素が無い");
-    }
-
-
-  return Token(TokenKind::decimal_integer,std::string("0"));
-}
-
-
-TokenString
-process_identifier(Token&&  id, Cursor&  cur, Context const&  ctx)
-{
-  TokenString  ls;
-
-  auto  macro = ctx.find_macro(*id);
-
-    if(macro)
-    {
-      auto&  text = macro->get_text();
-
-        if(macro->is_function_style())
+      else
+        if((c ==  ' ') ||
+           (c == '\t') ||
+           (c == '\r'))
         {
-          skip_spaces_and_newline(cur);
-
-            if(*cur != '(')
-            {
-              throw Error(cur,"関数式マクロの引数リストが無い");
-            }
-
-
           cur += 1;
 
-          auto  argls = read_argument_list(cur);
+          s.push_back(' ');
+        }
 
-            if(!macro->test_number_of_arguments(argls))
-            {
-              throw Error(Cursor(),"引数の数が一致しません");
-            }
+      else
+        if(cur.compare("\\\n"))
+        {
+          cur += 1;
 
+          cur.newline();
+        }
 
-
-          ls = process_text(text,ctx,&argls);
+      else
+        if(iscntrl(c))
+        {
+          throw Error(cur,"ディレクティブの途中で制御文字");
         }
 
       else
         {
-          ls = process_text(text,ctx);
+          cur += 1;
+
+          s.push_back(c);
         }
     }
 
-  else
-    {
-      ls.emplace_back(std::move(id));
-    }
 
-
-  return std::move(ls);
+  return std::move(s);
 }
 
 
 TokenString
-process_file(std::string const&  s, Context&  ctx)
+process_file(std::string const&  s)
 {
   Cursor  cur(s);
 
@@ -136,9 +108,7 @@ process_file(std::string const&  s, Context&  ctx)
     {
       cur += 1;
 
-      auto  s = read_directive(cur);
-
-      toks = process_directive(Cursor(s),ctx);
+      toks += Token(TokenKind::directive,read_directive(cur));
     }
 
 
@@ -150,9 +120,7 @@ process_file(std::string const&  s, Context&  ctx)
 
           cur.newline();
 
-          auto  s = read_directive(cur);
-
-          toks = process_directive(Cursor(s),ctx);
+          toks += Token(TokenKind::directive,read_directive(cur));
         }
 
       else
@@ -180,82 +148,13 @@ process_file(std::string const&  s, Context&  ctx)
                 }
 
               else
-                if(!ctx.test_locked_flag())
                 {
-                    if(tok == TokenKind::identifier)
-                    {
-                      toks += process_identifier(std::move(tok),cur,ctx);
-                    }
-
-                  else
-                    {
-                      toks.emplace_back(std::move(tok));
-                    }
+                  toks += std::move(tok);
                 }
             }
         }
     }
 
-
-  toks.emplace_back(Token());
-
-  return std::move(toks);
-}
-
-
-TokenString
-process_text(std::string const&  s, Context const&  ctx, ArgumentList const*  argls)
-{
-  Cursor  cur(s);
-
-  TokenString  toks;
-
-    for(;;)
-    {
-      skip_spaces_and_newline(cur);
-
-        if(!*cur)
-        {
-          break;
-        }
-
-      else
-        if(cur.compare('#','#'))
-        {
-        }
-
-      else
-        if(cur.compare('#'))
-        {
-        }
-
-      else
-        {
-          auto  tok = read_token(cur);
-
-            if(!tok)
-            {
-              break;
-            }
-
-          else
-            if(!ctx.test_locked_flag())
-            {
-                if(tok == TokenKind::identifier)
-                {
-                  toks += process_identifier(std::move(tok),cur,ctx);
-                }
-
-              else
-                {
-                  toks.emplace_back(std::move(tok));
-                }
-            }
-        }
-    }
-
-
-  toks.emplace_back(Token());
 
   return std::move(toks);
 }
@@ -275,7 +174,13 @@ main(int  argc, char**  argv)
 
     try
     {
-      toks = preprocessing::process_file(s,ctx);
+      toks = preprocessing::process_file(s);
+
+printf("file processing is end\n");
+
+      toks = preprocessing::process_token_string(std::move(toks),ctx);
+
+printf("token string processing is end\n");
     }
 
 
@@ -287,7 +192,9 @@ main(int  argc, char**  argv)
     }
 
 
+printf("**processed**\n");
   toks.print();
+printf("**context**\n");
   ctx.print();
   
 

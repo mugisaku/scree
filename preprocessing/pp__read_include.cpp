@@ -95,7 +95,10 @@ read_include(Cursor&  cur, Context&  ctx)
 
   fclose(f);
 
-  return process_file(content,ctx);
+
+  auto  toks = process_file(content);
+
+  return process_token_string(std::move(toks),ctx);
 }
 
 

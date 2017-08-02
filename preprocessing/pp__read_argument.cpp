@@ -10,32 +10,61 @@ namespace preprocessing{
 
 
 
+namespace{
 
-std::string
-read_argument(Cursor&  cur)
+
+TokenString
+read_argument(TokenString::const_iterator&  cur, Context const&  ctx)
 {
-  std::string  s;
+  TokenString  s;
 
     for(;;)
     {
       auto  const c = *cur;
 
-        if((c == ',') || (c == ')'))
+        if(!c)
+        {
+          throw Error(Cursor(),"実引数の途中で終端文字");
+        }
+
+      else
+        if(c == '(')
+        {
+          cur += 1;
+
+          s += c;
+
+          s += read_argument(cur,ctx);
+
+            while(*cur == ',')
+            {
+              cur += 1;
+
+              s += *cur;
+
+              s += read_argument(cur,ctx);
+            }
+
+
+          cur += 1;
+
+          s += Token(TokenKind::operator_,std::string(")"));
+
+          break;
+        }
+
+      else
+        if((c == ')') ||
+           (c == ','))
         {
           break;
         }
 
       else
-        if(isprint(c))
         {
           cur += 1;
 
-          s.push_back(c);
-        }
-
-      else
-        {
-          throw Error(cur,"引数の途中で処理不可の文字2");
+          s += c;
         }
     }
 
@@ -44,11 +73,12 @@ read_argument(Cursor&  cur)
 }
 
 
-ArgumentList
-read_argument_list(Cursor&  cur)
-{
-  skip_spaces_and_newline(cur);
+}
 
+
+ArgumentList
+read_argument_list(TokenString::const_iterator&  cur, Context const&  ctx)
+{
     if(*cur == ')')
     {
       cur += 1;
@@ -59,24 +89,23 @@ read_argument_list(Cursor&  cur)
 
   ArgumentList  argls;
 
-    if(isprint(*cur))
-    {
-      argls.emplace_back(read_argument(cur));
-    }
-
-  else
-    {
-      throw Error(cur,"第一引数に処理不可の文字");
-    }
-
-
     for(;;)
     {
-      skip_spaces_and_newline(cur);
+      auto&  tok = *cur;
 
-      auto  const c = *cur;
+        if(!tok)
+        {
+          throw Error(Cursor(),"実引数リストの途中で終端文字");
+        }
 
-        if(c == ')')
+      else
+        if(tok == ',')
+        {
+          throw Error(Cursor(),"実引数が無い");
+        }
+
+      else
+        if(tok == ')')
         {
           cur += 1;
 
@@ -84,26 +113,21 @@ read_argument_list(Cursor&  cur)
         }
 
       else
-        if(c == ',')
         {
-          cur += 1;
+          argls.emplace_back(read_argument(cur,ctx));
 
-          skip_spaces_and_newline(cur);
-
-            if(isprint(*cur))
+            if(*cur == ')')
             {
-              argls.emplace_back(read_argument(cur));
+              cur += 1;
+
+              break;
             }
 
           else
+            if(*cur == ',')
             {
-              throw Error(cur,"第二引数以降に処理不可の文字");
+              cur += 1;
             }
-        }
-
-      else
-        {
-          throw Error(cur,"第二引数以降に処理不可の文字");
         }
     }
 

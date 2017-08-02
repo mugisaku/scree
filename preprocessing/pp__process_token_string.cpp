@@ -1,3 +1,8 @@
+#include<string>
+#include<cstdlib>
+#include<cstring>
+#include<cctype>
+#include<vector>
 #include"pp.hpp"
 
 
@@ -41,13 +46,12 @@ read_print(Cursor&  cur)
 }
 
 
-}
-
-
 TokenString
-process_directive(Cursor  cur, Context&  ctx)
+process_directive(std::string const&  s, Context&  ctx)
 {
   TokenString  ls;
+
+  Cursor  cur(s);
 
   skip_spaces(cur);
 
@@ -78,57 +82,79 @@ process_directive(Cursor  cur, Context&  ctx)
 }
 
 
-std::string
-read_directive(Cursor&  cur)
+}
+
+
+TokenString
+process_token_string(TokenString&&  src, Context&  ctx)
 {
-  std::string  s;
+  TokenString  toks;
 
-    for(;;)
+  auto         it = src.cbegin();
+  auto  const end = src.cend();
+
+    while(it != end)
     {
-      auto  const c = *cur;
+      auto&  tok = *it;
 
-        if(c == '\n')
+        if(tok == TokenKind::directive)
         {
-          break;
+          it += 1;
+
+          toks += process_directive(*tok,ctx);
         }
 
       else
-        if((c ==  ' ') ||
-           (c == '\t') ||
-           (c == '\r'))
+        if(tok == TokenKind::identifier)
         {
-          cur += 1;
+          auto  macro = ctx.find_macro(*tok);
 
-          s.push_back(' ');
+            if(macro)
+            {
+              std::string  text;
+
+                if(macro->is_function_style())
+                {
+                  it += 1;
+
+                    if(*it != '(')
+                    {
+                      throw Error(Cursor(),"%sは関数マクロですが、実引数リストがありませsん",macro->get_name().data());
+                    }
+
+
+                  it += 1;
+
+                  auto  args = read_argument_list(it,ctx);
+
+                  toks += macro->expand(ctx,&args);
+                }
+
+              else
+                {
+                  toks += macro->expand(ctx,nullptr);
+                }
+            }
+
+          else
+            {
+              it += 1;
+
+              toks += std::move(tok);
+            }
         }
 
       else
-        if(cur.compare("\\\n"))
         {
-          cur += 1;
+          it += 1;
 
-          cur.newline();
-        }
-
-      else
-        if(iscntrl(c))
-        {
-          throw Error(cur,"ディレクティブの途中で制御文字");
-        }
-
-      else
-        {
-          cur += 1;
-
-          s.push_back(c);
+          toks += std::move(tok);
         }
     }
 
 
-  return std::move(s);
+  return std::move(toks);
 }
-
-
 
 
 }
