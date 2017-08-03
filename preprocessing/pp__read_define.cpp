@@ -78,12 +78,15 @@ read_define(Cursor&  cur, Context&  ctx)
     {
       skip_spaces(cur);
 
-      toks += read_token(cur);
+      auto  tok = read_token(cur);
 
-        if(!toks.back())
+        if(!tok)
         {
           break;
         }
+
+
+      toks += std::move(tok);
     }
 
 

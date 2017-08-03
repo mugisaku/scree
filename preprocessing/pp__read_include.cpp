@@ -98,7 +98,7 @@ read_include(Cursor&  cur, Context&  ctx)
 
   auto  toks = process_file(content);
 
-  return process_token_string(std::move(toks),ctx);
+  return process_token_string_that_includes_directives(std::move(toks),ctx);
 }
 
 

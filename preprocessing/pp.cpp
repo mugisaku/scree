@@ -98,6 +98,35 @@ read_directive(Cursor&  cur)
 
 
 TokenString
+process_text(std::string const&  s)
+{
+  Cursor  cur(s);
+
+  TokenString  toks;
+
+    for(;;)
+    {
+      skip_spaces(cur);
+
+      auto  tok = read_token(cur);
+
+        if(!tok)
+        {
+          break;
+        }
+
+      else
+        {
+          toks += std::move(tok);
+        }
+    }
+
+
+  return std::move(toks);
+}
+
+
+TokenString
 process_file(std::string const&  s)
 {
   Cursor  cur(s);
@@ -133,24 +162,16 @@ process_file(std::string const&  s)
         {
           skip_spaces(cur);
 
-            if(!*cur)
+          auto  tok = read_token(cur);
+
+            if(!tok)
             {
               break;
             }
 
           else
             {
-              auto  tok = read_token(cur);
-
-                if(!tok)
-                {
-                  break;
-                }
-
-              else
-                {
-                  toks += std::move(tok);
-                }
+              toks += std::move(tok);
             }
         }
     }
@@ -178,7 +199,7 @@ main(int  argc, char**  argv)
 
 printf("file processing is end\n");
 
-      toks = preprocessing::process_token_string(std::move(toks),ctx);
+      toks = preprocessing::process_token_string_that_includes_directives(std::move(toks),ctx);
 
 printf("token string processing is end\n");
     }

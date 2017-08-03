@@ -41,10 +41,13 @@ void          read_define(Cursor&  cur, Context&  ctx);
 
 Token  read_token(Cursor&  cur);
 
+TokenString  process_identifier(std::string const&  id, TokenString::const_iterator&  it, Context const&  ctx, Macro const*  parent=nullptr);
+
 TokenString  process_file(std::string const&  s);
-TokenString  process_text(std::string const&  s, Context const&  ctx);
-TokenString  process_text(Cursor&  cur, Context const&  ctx);
-TokenString  process_token_string(TokenString&&  src, Context&  ctx);
+TokenString  process_text(std::string const&  s);
+
+TokenString  process_token_string_that_includes_directives(TokenString const&  src, Context&        ctx);
+TokenString  process_token_string(                         TokenString const&  src, Context const&  ctx);
 
 
 #define report  printf("[%s %s %4d]\n",__FILE__,__func__,__LINE__)

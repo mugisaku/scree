@@ -145,79 +145,81 @@ read_token(Cursor&  cur)
 
   auto  const c = *cur;
 
-    if(c)
+    if(!c)
     {
-        if(c == '\'')
-        {
-          cur += 1;
+    }
 
-          tok = Token(TokenKind::character,read_quoted(cur,c));
-        }
+  else
+    if(c == '\'')
+    {
+      cur += 1;
 
-      else
-        if(c == '\"')
-        {
-          cur += 1;
+      tok = Token(TokenKind::character,read_quoted(cur,c));
+    }
 
-          tok = Token(TokenKind::string,read_quoted(cur,c));
-        }
+  else
+    if(c == '\"')
+    {
+      cur += 1;
 
-      else
-        if(cur.compare('/','*'))
-        {
-          cur += 2;
+      tok = Token(TokenKind::string,read_quoted(cur,c));
+    }
 
-          skip_blockstyle_comment(cur);
-        }
+  else
+    if(cur.compare('/','*'))
+    {
+      cur += 2;
 
-      else
-        if(cur.compare('/','/'))
-        {
-          cur += 2;
+      skip_blockstyle_comment(cur);
+    }
 
-          skip_linestyle_comment(cur);
-        }
+  else
+    if(cur.compare('/','/'))
+    {
+      cur += 2;
 
-      else
-        if(c == '0')
-        {
-          cur += 1;
+      skip_linestyle_comment(cur);
+    }
 
-          auto  const cc = *cur;
+  else
+    if(c == '0')
+    {
+      cur += 1;
 
-          tok = ((cc == 'b')? Token(TokenKind::integer,read_number_literal("0b",cur,     isbinary)):
-                 (cc == 'B')? Token(TokenKind::integer,read_number_literal("0B",cur,     isbinary)):
-                 (cc == 'o')? Token(TokenKind::integer,read_number_literal("0o",cur,      isoctal)):
-                 (cc == 'O')? Token(TokenKind::integer,read_number_literal("0O",cur,      isoctal)):
-                 (cc == 'x')? Token(TokenKind::integer,read_number_literal("0x",cur,ishexadecimal)):
-                 (cc == 'X')? Token(TokenKind::integer,read_number_literal("0X",cur,ishexadecimal)):
-                              Token(TokenKind::integer,std::string("0")                          ));
-        }
+      auto  const cc = *cur;
 
-      else
-        if(isdigit(c))
-        {
-          tok = Token(TokenKind::integer,read_number_literal("",cur,isdecimal,0));
-        }
+      tok = ((cc == 'b')? Token(TokenKind::integer,read_number_literal("0b",cur,     isbinary)):
+             (cc == 'B')? Token(TokenKind::integer,read_number_literal("0B",cur,     isbinary)):
+             (cc == 'o')? Token(TokenKind::integer,read_number_literal("0o",cur,      isoctal)):
+             (cc == 'O')? Token(TokenKind::integer,read_number_literal("0O",cur,      isoctal)):
+             (cc == 'x')? Token(TokenKind::integer,read_number_literal("0x",cur,ishexadecimal)):
+             (cc == 'X')? Token(TokenKind::integer,read_number_literal("0X",cur,ishexadecimal)):
+                          Token(TokenKind::integer,std::string("0")                          ));
+    }
 
-      else
-        if(isident0(c))
-        {
-          tok = Token(TokenKind::identifier,read_identifier(cur));
-        }
+  else
+    if(isdigit(c))
+    {
+      tok = Token(TokenKind::integer,read_number_literal("",cur,isdecimal,0));
+    }
 
-      else
-        if(ispunct(c))
-        {
-          cur += 1;
+  else
+    if(isident0(c))
+    {
+      tok = Token(TokenKind::identifier,read_identifier(cur));
+    }
 
-          tok = Token(TokenKind::operator_,std::string({c}));
-        }
+  else
+    if(ispunct(c))
+    {
+      cur += 1;
 
-      else
-        {
-          throw Error(cur,"処理不可の文字 %c(%d)",c,c);
-        }
+      tok = Token(TokenKind::operator_,std::string({c}));
+    }
+
+  else
+    {
+      throw Error(cur,"処理不可の文字 %c(%d)",c,c);
     }
 
 

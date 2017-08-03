@@ -86,7 +86,40 @@ process_directive(std::string const&  s, Context&  ctx)
 
 
 TokenString
-process_token_string(TokenString&&  src, Context&  ctx)
+process_identifier(std::string const&  id, TokenString::const_iterator&  it, Context const&  ctx, Macro const*  parent)
+{
+  auto  macro = ctx.find_macro(id);
+
+    if(macro && (macro != parent))
+    {
+        if(macro->is_function_style())
+        {
+            if(*it != '(')
+            {
+              throw Error(Cursor(),"%sは関数マクロですが、実引数リストがありませsん",macro->get_name().data());
+            }
+
+
+          it += 1;
+
+          auto  args = read_argument_list(it,ctx);
+
+          return macro->expand(ctx,&args);
+        }
+
+      else
+        {
+          return macro->expand(ctx,nullptr);
+        }
+    }
+
+
+  return TokenString();
+}
+
+
+TokenString
+process_token_string_that_includes_directives(TokenString const&  src, Context&  ctx)
 {
   TokenString  toks;
 
@@ -95,59 +128,71 @@ process_token_string(TokenString&&  src, Context&  ctx)
 
     while(it != end)
     {
-      auto&  tok = *it;
+      auto&  tok = *it     ;
+                    it += 1;
 
         if(tok == TokenKind::directive)
         {
-          it += 1;
-
           toks += process_directive(*tok,ctx);
         }
 
       else
         if(tok == TokenKind::identifier)
         {
-          auto  macro = ctx.find_macro(*tok);
+          auto  res = process_identifier(*tok,it,ctx);
 
-            if(macro)
+            if(res.size())
             {
-              std::string  text;
-
-                if(macro->is_function_style())
-                {
-                  it += 1;
-
-                    if(*it != '(')
-                    {
-                      throw Error(Cursor(),"%sは関数マクロですが、実引数リストがありませsん",macro->get_name().data());
-                    }
-
-
-                  it += 1;
-
-                  auto  args = read_argument_list(it,ctx);
-
-                  toks += macro->expand(ctx,&args);
-                }
-
-              else
-                {
-                  toks += macro->expand(ctx,nullptr);
-                }
+              toks += res;
             }
 
           else
             {
-              it += 1;
-
-              toks += std::move(tok);
+              toks += tok;
             }
         }
 
       else
         {
-          it += 1;
+          toks += std::move(tok);
+        }
+    }
 
+
+  return std::move(toks);
+}
+
+
+TokenString
+process_token_string(TokenString const&  src, Context const&  ctx)
+{
+  TokenString  toks;
+
+  auto         it = src.cbegin();
+  auto  const end = src.cend();
+
+    while(it != end)
+    {
+      auto&  tok = *it     ;
+                    it += 1;
+
+        if(tok == TokenKind::identifier)
+        {
+          auto  res = process_identifier(*tok,it,ctx);
+
+            if(res.size())
+            {
+              toks += res;
+            }
+
+          else
+            {
+              toks += tok;
+            }
+        }
+
+      else
+        {
           toks += std::move(tok);
         }
     }

@@ -15,6 +15,8 @@ TokenString::
 null;
 
 
+
+
 void
 TokenString::
 extend()
@@ -27,13 +29,13 @@ extend()
     }
 
   else
-    if((length+1) >= allocated_length)
+    if((length+1) > allocated_length)
     {
       auto  new_allocated_length = allocated_length*2;
 
       auto  new_pointer = new Token[new_allocated_length];
 
-        for(int  i = 0;  i < allocated_length;  ++i)
+        for(int  i = 0;  i < length;  ++i)
         {
           new_pointer[i] = std::move(pointer[i]);
         }
@@ -51,14 +53,17 @@ operator=(TokenString const&  rhs) noexcept
 {
   clear();
 
-  pointer = new Token[rhs.allocated_length+1];
+  pointer = new Token[rhs.allocated_length];
 
   allocated_length = rhs.allocated_length;
             length = rhs.length          ;
 
+  auto  dst =     data();
+  auto  src = rhs.data();
+
     for(int  i = 0;  i < length;  ++i)
     {
-      pointer[i] = rhs.pointer[i];
+      dst[i] = src[i];
     }
 
 
@@ -71,6 +76,7 @@ TokenString::
 operator=(TokenString&&  rhs) noexcept
 {
   clear();
+
 
   std::swap(pointer,rhs.pointer);
 
@@ -90,9 +96,7 @@ operator+=(Token const&  tok)
     {
       extend();
 
-      back() = tok;
-
-      length += 1;
+      data()[length++] = tok;
     }
 }
 
@@ -105,9 +109,7 @@ operator+=(Token&&  tok)
     {
       extend();
 
-      back() = std::move(tok);
-
-      length += 1;
+      data()[length++] = std::move(tok);
     }
 }
 

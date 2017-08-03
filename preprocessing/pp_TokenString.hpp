@@ -26,7 +26,7 @@ public:
   using const_iterator = Token const*;
 
   TokenString(){}
-  TokenString(std::string&&  s){}
+  TokenString(Token&&  tok){*this += std::move(tok);}
   TokenString(TokenString const&  rhs) noexcept{*this = rhs;}
   TokenString(TokenString&&       rhs) noexcept{*this = std::move(rhs);}
  ~TokenString(){clear();}
@@ -47,12 +47,13 @@ public:
 
   void  pop_back(){length -= 1;}
 
-  Token const&  front() const{return pointer[       0];}
-  Token const&   back() const{return pointer[length-1];}
+  Token const&  front() const{return data()[       0];}
+  Token const&   back() const{return data()[length-1];}
 
-  Token&  front(){return pointer[       0];}
-  Token&   back(){return pointer[length-1];}
+  Token&  front(){return data()[       0];}
+  Token&   back(){return data()[length-1];}
 
+  Token      *  data()      {return pointer;}
   Token const*  data() const{return pointer;}
 
   iterator  begin() const{return pointer;}
