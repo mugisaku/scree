@@ -25,31 +25,24 @@ IfDirectiveKind
 struct
 Context
 {
+  static constexpr int  matched_flag = 1;
+  static constexpr int   locked_flag = 2;
+
   std::list<Macro>  macro_table;
 
-  bool  locked_flag=false;
+  std::vector<IfDirectiveKind>  if_stack;
 
-  struct IfCounter{
-    int  val;
+  int  if_depth=0;
 
-    IfCounter(int  val_=0): val(val_){}
+  std::vector<uint8_t>  flags_stack;
 
-    int  operator()(){return val += 1;}
-
-  } ic;
-
-  struct SectionCounter{
-    int  maj;
-    int  min;
-
-    SectionCounter(int  maj_=0, int  min_=0): maj(maj_), min(min_){}
-
-  } sc, unlock_sc;
-
-
-  std::vector<int>  minor_stack;
+  void    set(int  flag){flags_stack.back() |=  flag;}
+  void  unset(int  flag){flags_stack.back() &= ~flag;}
+  bool   test(int  flag) const{return(flags_stack.back()&flag);}
 
 public:
+  Context(){flags_stack.emplace_back(0);}
+
   Macro const*  find_macro(const std::string&  name) const;
 
   void  append_macro(Macro&&  macro){macro_table.emplace_back(std::move(macro));}
@@ -57,7 +50,7 @@ public:
 
   void  accept_if_directive(IfDirectiveKind  k, char const*  expression=nullptr);
 
-  bool  test_locked_flag() const{return locked_flag;}
+  bool  test_locked_flag() const{return test(locked_flag);}
 
   void  print() const;
 

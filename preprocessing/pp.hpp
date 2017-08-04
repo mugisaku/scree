@@ -39,6 +39,10 @@ TokenString  read_include(Cursor&  cur, Context&  ctx);
 void          read_define(Cursor&  cur, Context&  ctx);
 
 
+long  value_expression(TokenString const&  toks, Context const&  ctx);
+long  value_expression(std::string const&  s, Context const&  ctx);
+
+
 Token  read_token(Cursor&  cur);
 
 TokenString  process_identifier(std::string const&  id, TokenString::const_iterator&  it, Context const&  ctx, Macro const*  parent=nullptr);

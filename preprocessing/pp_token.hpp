@@ -15,7 +15,10 @@ enum class
 TokenKind
 {
   null,
-  integer,
+  binary_integer,
+  octal_integer,
+  decimal_integer,
+  hexadecimal_integer,
   character,
   string,
   identifier,

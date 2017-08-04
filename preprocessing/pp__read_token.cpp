@@ -54,6 +54,65 @@ bool  ishexadecimal(char  c){return isdecimal(c)               ||
 
 
 std::string
+read_operator(Cursor&  cur)
+{
+  std::string  s;
+
+       if(cur.compare('.','.','.')){s = "...";}
+  else if(cur.compare('<','<','=')){s = "<<=";}
+  else if(cur.compare('>','>','=')){s = ">>=";}
+  else if(cur.compare('<','<'    )){s = "<<";}
+  else if(cur.compare('<','='    )){s = "<=";}
+  else if(cur.compare('<'        )){s = "<";}
+  else if(cur.compare('>','>'    )){s = ">>";}
+  else if(cur.compare('>','='    )){s = ">=";}
+  else if(cur.compare('>'        )){s = ">";}
+  else if(cur.compare('+','+'    )){s = "++";}
+  else if(cur.compare('-','-'    )){s = "--";}
+  else if(cur.compare('-','>'    )){s = "->";}
+  else if(cur.compare('+','='    )){s = "+=";}
+  else if(cur.compare('-','='    )){s = "-=";}
+  else if(cur.compare('*','='    )){s = "*=";}
+  else if(cur.compare('/','='    )){s = "/=";}
+  else if(cur.compare('%','='    )){s = "%=";}
+  else if(cur.compare('|','='    )){s = "|=";}
+  else if(cur.compare('&','='    )){s = "&=";}
+  else if(cur.compare('^','='    )){s = "^=";}
+  else if(cur.compare('=','='    )){s = "==";}
+  else if(cur.compare('!','='    )){s = "!=";}
+  else if(cur.compare('|','|'    )){s = "||";}
+  else if(cur.compare('&','&'    )){s = "&&";}
+  else if(cur.compare(':',':'    )){s = "::";}
+  else if(cur.compare(':'        )){s = ":";}
+  else if(cur.compare('='        )){s = "=";}
+  else if(cur.compare('!'        )){s = "!";}
+  else if(cur.compare('~'        )){s = "~";}
+  else if(cur.compare('^'        )){s = "^";}
+  else if(cur.compare('+'        )){s = "+";}
+  else if(cur.compare('-'        )){s = "-";}
+  else if(cur.compare('*'        )){s = "*";}
+  else if(cur.compare('/'        )){s = "/";}
+  else if(cur.compare('%'        )){s = "%";}
+  else if(cur.compare('|'        )){s = "|";}
+  else if(cur.compare('&'        )){s = "&";}
+  else if(cur.compare(','        )){s = ",";}
+  else if(cur.compare('.'        )){s = ".";}
+  else if(cur.compare('('        )){s = "(";}
+  else if(cur.compare(')'        )){s = ")";}
+  else if(cur.compare('['        )){s = "[";}
+  else if(cur.compare(']'        )){s = "]";}
+  else if(cur.compare('{'        )){s = "{";}
+  else if(cur.compare('}'        )){s = "}";}
+  else{throw Error(cur,"不明な演算子");}
+
+
+  cur += s.size();
+
+  return std::move(s);
+}
+
+
+std::string
 read_identifier(Cursor&  cur)
 {
   std::string  s;
@@ -188,19 +247,19 @@ read_token(Cursor&  cur)
 
       auto  const cc = *cur;
 
-      tok = ((cc == 'b')? Token(TokenKind::integer,read_number_literal("0b",cur,     isbinary)):
-             (cc == 'B')? Token(TokenKind::integer,read_number_literal("0B",cur,     isbinary)):
-             (cc == 'o')? Token(TokenKind::integer,read_number_literal("0o",cur,      isoctal)):
-             (cc == 'O')? Token(TokenKind::integer,read_number_literal("0O",cur,      isoctal)):
-             (cc == 'x')? Token(TokenKind::integer,read_number_literal("0x",cur,ishexadecimal)):
-             (cc == 'X')? Token(TokenKind::integer,read_number_literal("0X",cur,ishexadecimal)):
-                          Token(TokenKind::integer,std::string("0")                          ));
+      tok = ((cc == 'b')? Token(TokenKind::binary_integer     ,read_number_literal("0b",cur,     isbinary)):
+             (cc == 'B')? Token(TokenKind::binary_integer     ,read_number_literal("0B",cur,     isbinary)):
+             (cc == 'o')? Token(TokenKind::octal_integer      ,read_number_literal("0o",cur,      isoctal)):
+             (cc == 'O')? Token(TokenKind::octal_integer      ,read_number_literal("0O",cur,      isoctal)):
+             (cc == 'x')? Token(TokenKind::hexadecimal_integer,read_number_literal("0x",cur,ishexadecimal)):
+             (cc == 'X')? Token(TokenKind::hexadecimal_integer,read_number_literal("0X",cur,ishexadecimal)):
+                          Token(TokenKind::decimal_integer    ,std::string("0")                          ));
     }
 
   else
     if(isdigit(c))
     {
-      tok = Token(TokenKind::integer,read_number_literal("",cur,isdecimal,0));
+      tok = Token(TokenKind::decimal_integer,read_number_literal("",cur,isdecimal,0));
     }
 
   else
@@ -212,9 +271,7 @@ read_token(Cursor&  cur)
   else
     if(ispunct(c))
     {
-      cur += 1;
-
-      tok = Token(TokenKind::operator_,std::string({c}));
+      tok = Token(TokenKind::operator_,read_operator(cur));
     }
 
   else

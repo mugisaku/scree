@@ -22,7 +22,10 @@ to_string() const
     {
   case(TokenKind::null):
       break;
-  case(TokenKind::integer):
+  case(TokenKind::binary_integer):
+  case(TokenKind::octal_integer):
+  case(TokenKind::decimal_integer):
+  case(TokenKind::hexadecimal_integer):
   case(TokenKind::operator_):
   case(TokenKind::identifier):
       s.append(string);
@@ -57,7 +60,10 @@ print() const
   case(TokenKind::null):
       printf(" NULL ");
       break;
-  case(TokenKind::integer):
+  case(TokenKind::binary_integer):
+  case(TokenKind::octal_integer):
+  case(TokenKind::decimal_integer):
+  case(TokenKind::hexadecimal_integer):
   case(TokenKind::operator_):
   case(TokenKind::identifier):
       printf(" %s ",string.data());

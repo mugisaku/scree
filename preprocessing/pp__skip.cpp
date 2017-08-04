@@ -125,8 +125,6 @@ skip_linestyle_comment(Cursor&  cur)
 
         if(c == '\n')
         {
-          cur.newline();
-
           break;
         }
 

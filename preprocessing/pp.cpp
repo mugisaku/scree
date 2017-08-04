@@ -141,7 +141,7 @@ process_file(std::string const&  s)
     }
 
 
-    for(;;)
+    while(*cur)
     {
         if(cur.compare('\n','#'))
         {
@@ -162,17 +162,7 @@ process_file(std::string const&  s)
         {
           skip_spaces(cur);
 
-          auto  tok = read_token(cur);
-
-            if(!tok)
-            {
-              break;
-            }
-
-          else
-            {
-              toks += std::move(tok);
-            }
+          toks += read_token(cur);
         }
     }
 

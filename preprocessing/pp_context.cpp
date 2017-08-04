@@ -1,6 +1,7 @@
 #include"pp_context.hpp"
 #include"pp_cursor.hpp"
 #include"pp.hpp"
+#include<cstdlib>
 
 
 
@@ -50,36 +51,11 @@ find_macro(const std::string&  name) const
 
 
 bool
-test_value(Cursor&  cur, Context const&  ctx)
+test_identifier(std::string const&  s, Context const&  ctx)
 {
-    if(!*cur)
-    {
-      throw Error(cur,"式がない");
-    }
+  Cursor  cur(s);
 
-
-  std::vector<char>  unop_stack;
-
-/*
-    for(;;)
-    {
-      auto  const c = *cur;
-
-        if(ispunct(c))
-        {
-        }
-    }
-*/
-
-
-  return true;
-}
-
-
-bool
-test_identifier(Cursor&  cur, Context const&  ctx)
-{
-    if(!isalpha(*cur) && (*cur != '_'))
+    if(!isident0(*cur))
     {
       throw Error(cur,"識別子がない");
     }
@@ -105,87 +81,142 @@ accept_if_directive(IfDirectiveKind  k, char const*  expression)
 {
   std::string  s(expression? expression:"");
 
-  Cursor  cur(s);
+    if(if_stack.size())
+    {
+        if((k               == IfDirectiveKind::elif ) &&
+           (if_stack.back() == IfDirectiveKind::else_))
+        {
+          throw Error(Cursor(),"elseの後にelifが現れた");
+        }
+    }
+
+  else
+    if((k == IfDirectiveKind::else_) ||
+       (k == IfDirectiveKind::elif ) ||
+       (k == IfDirectiveKind::endif))
+    {
+      throw Error(Cursor(),"ifが無ければ、elif.else,endifは不正");
+    }
+
+
+  if_stack.emplace_back(k);
+
+  auto&  flags = flags_stack.back();
 
     switch(k)
     {
   case(IfDirectiveKind::if_):
-        if(test_value(cur,*this))
+      if_depth += 1;
+
+        if(!test(locked_flag))
         {
+            if(value_expression(s,*this))
+            {
+              set(matched_flag);
+
+              flags_stack.emplace_back(0);
+            }
+
+          else
+            {
+              set(locked_flag);
+            }
         }
-
-      else
-        {
-          locked_flag = true;
-
-          unlock_sc = SectionCounter(sc.maj);
-        }
-
-
-      minor_stack.emplace_back(sc.min);
-
-      sc.maj = ic();
-      sc.min =    0;
       break;
   case(IfDirectiveKind::ifdef):
-        if(test_identifier(cur,*this))
+      if_depth += 1;
+
+        if(!test(locked_flag))
         {
+            if(test_identifier(s,*this))
+            {
+              set(matched_flag);
+
+              flags_stack.emplace_back(0);
+            }
+
+          else
+            {
+              set(locked_flag);
+            }
         }
-
-      else
-        {
-          locked_flag = true;
-
-          unlock_sc = SectionCounter(0,0);
-        }
-
-
-      minor_stack.emplace_back(sc.min);
-
-      sc.maj = ic();
-      sc.min =    0;
       break;
   case(IfDirectiveKind::ifndef):
-        if(!test_identifier(cur,*this))
+      if_depth += 1;
+
+        if(!test(locked_flag))
         {
+            if(!test_identifier(s,*this))
+            {
+              set(matched_flag);
+
+              flags_stack.emplace_back(0);
+            }
+
+          else
+            {
+              set(locked_flag);
+            }
         }
-
-      else
-        {
-          locked_flag = true;
-
-          unlock_sc = SectionCounter(0,0);
-        }
-
-
-      minor_stack.emplace_back(sc.min);
-
-      sc.maj = ic();
-      sc.min =    0;
       break;
   case(IfDirectiveKind::elif):
-        if(test_value(cur,*this))
+        if(!test(locked_flag))
         {
+            if(!test(matched_flag))
+            {
+                if(value_expression(s,*this))
+                {
+                  set(matched_flag);
+
+                  flags_stack.emplace_back(0);
+                }
+
+              else
+                {
+                  flags |= locked_flag;
+                }
+            }
+
+          else
+            {
+              set(locked_flag);
+            }
         }
-
-      else
-        {
-          locked_flag = true;
-
-          unlock_sc = SectionCounter(0,0);
-        }
-
-
-      sc.min += 1;
       break;
   case(IfDirectiveKind::else_):
-      sc.min += 1;
+        if(!test(locked_flag))
+        {
+            if(!test(matched_flag))
+            {
+              set(matched_flag);
+
+              flags_stack.emplace_back(0);
+            }
+
+          else
+            {
+              set(locked_flag);
+            }
+        }
       break;
   case(IfDirectiveKind::endif):
-      sc.maj -= 1;
-      sc.min = minor_stack.back();
+        if(!if_depth)
+        {
+          throw Error(Cursor(),"対応するif文が無い");
+        }
 
-      minor_stack.pop_back();
+
+      if_depth -= 1;
+
+        if(!test(locked_flag))
+        {
+            if(test(matched_flag))
+            {
+              flags_stack.pop_back();
+
+              unset(locked_flag);
+            }
+        }
       break;
     }
 }
