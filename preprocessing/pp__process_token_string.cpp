@@ -86,9 +86,25 @@ process_directive(std::string const&  s, Context&  ctx)
 
 
 TokenString
-process_identifier(std::string const&  id, TokenString::const_iterator&  it, Context const&  ctx, Macro const*  parent)
+process_identifier(Token const&  id, TokenString::const_iterator&  it, Context const&  ctx, Macro const*  parent)
 {
-  auto  macro = ctx.find_macro(id);
+    if(*id == "__FILE__")
+    {
+      auto  tok = Token(TokenKind::string,std::string(id.get_info().get_file_path()));
+
+      return TokenString(std::move(tok));
+    }
+
+  else
+    if(*id == "__LINE__")
+    {
+      auto  tok = Token(TokenKind::decimal_integer,std::to_string(id.get_info().get_line_count()));
+
+      return TokenString(std::move(tok));
+    }
+
+
+  auto  macro = ctx.find_macro(*id);
 
     if(macro && (macro != parent))
     {
@@ -139,7 +155,7 @@ process_token_string_that_includes_directives(TokenString const&  src, Context& 
       else
         if(tok == TokenKind::identifier)
         {
-          auto  res = process_identifier(*tok,it,ctx);
+          auto  res = process_identifier(tok,it,ctx);
 
             if(res.size())
             {
@@ -178,7 +194,7 @@ process_token_string(TokenString const&  src, Context const&  ctx)
 
         if(tok == TokenKind::identifier)
         {
-          auto  res = process_identifier(*tok,it,ctx);
+          auto  res = process_identifier(tok,it,ctx);
 
             if(res.size())
             {

@@ -7,6 +7,7 @@
 #include<cstdio>
 #include<cstdarg>
 #include<exception>
+#include<memory>
 
 
 namespace preprocessing{
@@ -15,20 +16,29 @@ namespace preprocessing{
 class
 Cursor
 {
+  std::shared_ptr<std::string>  file_path;
+
   char const*     head=nullptr;
   char const*  pointer=nullptr;
 
-  int  line_count=0;
+  int  line_count=1;
 
 public:
   constexpr Cursor(){}
 
-  Cursor(std::string const&  s):  head(s.data()), pointer(s.data()){}
+  Cursor(std::string const&  s, std::string*  file_path_=nullptr):
+  file_path(file_path_),
+  head(s.data()), pointer(s.data()){}
 
   Cursor&  operator+=(int  n);
 
   char const&  operator[](int  i) const{return pointer[i];}
   char const&   operator*() const{return *pointer;}
+
+  int  get_line_count() const{return line_count;}
+  int  get_column_point() const;
+
+  std::shared_ptr<std::string>  share_file_path(){return file_path;}
 
   char const*  to_pointer() const{return pointer;};
 

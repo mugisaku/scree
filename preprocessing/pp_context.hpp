@@ -41,7 +41,7 @@ Context
   bool   test(int  flag) const{return(flags_stack.back()&flag);}
 
 public:
-  Context(){flags_stack.emplace_back(0);}
+  Context();
 
   Macro const*  find_macro(const std::string&  name) const;
 

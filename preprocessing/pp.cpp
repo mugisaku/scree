@@ -127,17 +127,19 @@ process_text(std::string const&  s)
 
 
 TokenString
-process_file(std::string const&  s)
+process_file(std::string const&  s, std::string*  file_path)
 {
-  Cursor  cur(s);
+  Cursor  cur(s,file_path);
 
   TokenString  toks;
 
     if(*cur == '#')
     {
+      TokenInfo  info(cur);
+
       cur += 1;
 
-      toks += Token(TokenKind::directive,read_directive(cur));
+      toks += Token(TokenKind::directive,read_directive(cur),std::move(info));
     }
 
 
@@ -145,11 +147,13 @@ process_file(std::string const&  s)
     {
         if(cur.compare('\n','#'))
         {
-          cur += 1;
-
           cur.newline();
 
-          toks += Token(TokenKind::directive,read_directive(cur));
+          TokenInfo  info(cur);
+
+          cur += 1;
+
+          toks += Token(TokenKind::directive,read_directive(cur),std::move(info));
         }
 
       else
@@ -177,7 +181,9 @@ process_file(std::string const&  s)
 int
 main(int  argc, char**  argv)
 {
-  auto  s = load_file(argv[1]);
+  auto  path = argv[1];
+
+  auto  s = load_file(path);
 
   preprocessing::Context  ctx;
 
@@ -185,7 +191,7 @@ main(int  argc, char**  argv)
 
     try
     {
-      toks = preprocessing::process_file(s);
+      toks = preprocessing::process_file(s,new std::string(path));
 
 printf("file processing is end\n");
 

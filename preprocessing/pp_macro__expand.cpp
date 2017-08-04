@@ -34,13 +34,13 @@ replace(std::string const&  id, ParameterList const&  parls, ArgumentList const&
         {
             if(parls[i] == id)
             {
-              return TokenString(argls[i]);
+              return argls[i];
             }
         }
-
-
-      return TokenString(Token(TokenKind::identifier,std::string(id)));
     }
+
+
+  return TokenString();
 }
 
 
@@ -55,29 +55,6 @@ bool
 compare(TokenString::const_iterator  it, char  c0, char  c1)
 {
   return(compare(it,c0) && compare(it+1,c1));
-}
-
-
-void
-concatenate(TokenString&  dst, TokenString&&  src)
-{
-/*
-  auto  tmps = *dst.back()+*tok;
-
-  dst.pop_back();
-
-  Cursor  cur(tmps);
-
-  toks.emplace_back(read_token(cur));
-
-
-  auto  next = read_token(cur);
-
-    if(next)
-    {
-      throw Error(cur,"連結後の字句が単一ではない");
-    }
-*/
 }
 
 
@@ -194,7 +171,7 @@ expand(Context const&  ctx, ArgumentList const*  args) const
                 {
                     if(*tmp == TokenKind::identifier)
                     {
-                      auto  res = process_identifier(**tmp,it,ctx,this);
+                      auto  res = process_identifier(*tmp,it,ctx,this);
 
                         if(res.size())
                         {

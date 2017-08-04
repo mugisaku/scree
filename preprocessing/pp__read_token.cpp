@@ -202,6 +202,8 @@ read_token(Cursor&  cur)
 {
   Token  tok;
 
+  TokenInfo  info(cur);
+
   auto  const c = *cur;
 
     if(!c)
@@ -213,7 +215,7 @@ read_token(Cursor&  cur)
     {
       cur += 1;
 
-      tok = Token(TokenKind::character,read_quoted(cur,c));
+      tok = Token(TokenKind::character,read_quoted(cur,c),std::move(info));
     }
 
   else
@@ -221,7 +223,7 @@ read_token(Cursor&  cur)
     {
       cur += 1;
 
-      tok = Token(TokenKind::string,read_quoted(cur,c));
+      tok = Token(TokenKind::string,read_quoted(cur,c),std::move(info));
     }
 
   else
@@ -247,31 +249,31 @@ read_token(Cursor&  cur)
 
       auto  const cc = *cur;
 
-      tok = ((cc == 'b')? Token(TokenKind::binary_integer     ,read_number_literal("0b",cur,     isbinary)):
-             (cc == 'B')? Token(TokenKind::binary_integer     ,read_number_literal("0B",cur,     isbinary)):
-             (cc == 'o')? Token(TokenKind::octal_integer      ,read_number_literal("0o",cur,      isoctal)):
-             (cc == 'O')? Token(TokenKind::octal_integer      ,read_number_literal("0O",cur,      isoctal)):
-             (cc == 'x')? Token(TokenKind::hexadecimal_integer,read_number_literal("0x",cur,ishexadecimal)):
-             (cc == 'X')? Token(TokenKind::hexadecimal_integer,read_number_literal("0X",cur,ishexadecimal)):
-                          Token(TokenKind::decimal_integer    ,std::string("0")                          ));
+      tok = ((cc == 'b')? Token(TokenKind::binary_integer     ,read_number_literal("0b",cur,     isbinary),std::move(info)):
+             (cc == 'B')? Token(TokenKind::binary_integer     ,read_number_literal("0B",cur,     isbinary),std::move(info)):
+             (cc == 'o')? Token(TokenKind::octal_integer      ,read_number_literal("0o",cur,      isoctal),std::move(info)):
+             (cc == 'O')? Token(TokenKind::octal_integer      ,read_number_literal("0O",cur,      isoctal),std::move(info)):
+             (cc == 'x')? Token(TokenKind::hexadecimal_integer,read_number_literal("0x",cur,ishexadecimal),std::move(info)):
+             (cc == 'X')? Token(TokenKind::hexadecimal_integer,read_number_literal("0X",cur,ishexadecimal),std::move(info)):
+                          Token(TokenKind::decimal_integer    ,std::string("0")                           ,std::move(info)));
     }
 
   else
     if(isdigit(c))
     {
-      tok = Token(TokenKind::decimal_integer,read_number_literal("",cur,isdecimal,0));
+      tok = Token(TokenKind::decimal_integer,read_number_literal("",cur,isdecimal,0),std::move(info));
     }
 
   else
     if(isident0(c))
     {
-      tok = Token(TokenKind::identifier,read_identifier(cur));
+      tok = Token(TokenKind::identifier,read_identifier(cur),std::move(info));
     }
 
   else
     if(ispunct(c))
     {
-      tok = Token(TokenKind::operator_,read_operator(cur));
+      tok = Token(TokenKind::operator_,read_operator(cur),std::move(info));
     }
 
   else

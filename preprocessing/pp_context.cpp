@@ -2,11 +2,43 @@
 #include"pp_cursor.hpp"
 #include"pp.hpp"
 #include<cstdlib>
+#include<ctime>
 
 
 
 
 namespace preprocessing{
+
+
+
+
+Context::
+Context()
+{
+  Macro  date(std::string("__DATE__"));
+  Macro  time(std::string("__TIME__"));
+
+
+  auto  t = std::time(nullptr);
+
+  auto  tm = std::gmtime(&t);
+
+  char  buf[256];
+
+  std::strftime(buf,sizeof(buf),"%a %d %Y",tm);
+
+  date.set_token_string(TokenString(Token(TokenKind::string,std::string(buf))));
+
+  std::strftime(buf,sizeof(buf),"%H:%M:%S",tm);
+
+  time.set_token_string(TokenString(Token(TokenKind::string,std::string(buf))));
+
+  flags_stack.emplace_back(0);
+
+
+  append_macro(std::move(date));
+  append_macro(std::move(time));
+}
 
 
 

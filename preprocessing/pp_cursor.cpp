@@ -1,4 +1,5 @@
 #include"pp_cursor.hpp"
+#include"pp_unicode.hpp"
 
 
 namespace preprocessing{
@@ -27,6 +28,26 @@ newline()
 }
 
 
+int
+Cursor::
+get_column_point() const
+{
+  auto  p = head;
+
+  int  n = 0;
+
+    while(p < pointer)
+    {
+      p += utf8_byte_number(*p);
+
+      n += 1;
+    }
+
+
+  return n;
+}
+
+
 bool
 Cursor::
 compare(const char*  s) const
@@ -34,7 +55,6 @@ compare(const char*  s) const
   auto  const len = std::strlen(s);
 
   return(std::strncmp(pointer,s,len) == 0);
-         
 }
 
 
@@ -73,7 +93,9 @@ void
 Cursor::
 print() const
 {
-  printf("Line:%4d\n",line_count+1);
+  printf("File: %s\n",file_path? file_path->data():"?");
+
+  printf("Line:%4d\n",line_count);
 
     if(pointer)
     {

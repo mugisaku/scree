@@ -110,14 +110,14 @@ operate(std::vector<char>&  stack, long  l)
 
   return l;
 }
+
+
 }
 
 
 long
-value_expression(TokenString const&  toks, Context const&  ctx)
+value_expression(TokenString::const_iterator&  it, Context const&  ctx)
 {
-  auto  it = toks.cbegin();
-
   std::vector<char>          unop_stack;
   std::vector<ElementKind>  binop_stack;
 
@@ -131,6 +131,20 @@ value_expression(TokenString const&  toks, Context const&  ctx)
         {
           it += 1;
 
+            if(tok == "(")
+            {
+              auto  l = value_expression(it,ctx);
+
+              output.emplace_back(operate(unop_stack,l));
+            }
+
+          else
+            if(tok == ")")
+            {
+              break;
+            }
+
+          else
             if(output.empty() || (output.back().kind != ElementKind::operand))
             {
                    if(tok == "!"){unop_stack.emplace_back('!');}
@@ -262,13 +276,23 @@ value_expression(TokenString const&  toks, Context const&  ctx)
 
           else
             {
-              auto  toks = process_identifier(*tok,it,ctx);
+              auto  toks = process_identifier(tok,it,ctx);
 
-              auto  l = value_expression(toks,ctx);
+                if(toks.size())
+                {
+                  auto  coit = toks.cbegin();
 
-              l = operate(unop_stack,l);
+                  auto  l = value_expression(coit,ctx);
 
-              output.emplace_back(operate(unop_stack,l));
+                  l = operate(unop_stack,l);
+
+                  output.emplace_back(operate(unop_stack,l));
+                }
+
+              else
+                {
+                  throw Error(Cursor(),"%s 不明な識別子",__func__);
+                }
             }
         }
 
@@ -341,7 +365,8 @@ value_expression(TokenString const&  toks, Context const&  ctx)
       throw Error(Cursor(),"演算結果が不正 %d",calc.size());
     }
 
-printf("%ld\n",calc.front());
+
+//printf("%ld\n",calc.front());
   return calc.front();
 }
 
@@ -353,7 +378,9 @@ value_expression(std::string const&  s, Context const&  ctx)
 
   toks = process_token_string(toks,ctx);
 
-  return value_expression(toks,ctx);
+  auto  it = toks.cbegin();
+
+  return value_expression(it,ctx);
 }
 
 
