@@ -69,7 +69,9 @@ public:
   kind(k), string(std::move(s)), info(std::move(info_)){}
 
   bool  operator==(TokenKind  k) const{return kind == k;}
+  bool  operator!=(TokenKind  k) const{return kind != k;}
   bool  operator==(std::string const&  s) const{return string == s;}
+  bool  operator!=(std::string const&  s) const{return string != s;}
   bool  operator==(char  c) const{return(string[0] == c);}
   bool  operator!=(char  c) const{return(string[0] != c);}
 

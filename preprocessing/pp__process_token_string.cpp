@@ -88,6 +88,7 @@ process_directive(std::string const&  s, Context&  ctx)
 TokenString
 process_identifier(Token const&  id, TokenString::const_iterator&  it, Context const&  ctx, Macro const*  parent)
 {
+id.print();
     if(*id == "__FILE__")
     {
       auto  tok = Token(TokenKind::string,std::string(id.get_info().get_file_path()));

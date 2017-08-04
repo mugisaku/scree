@@ -162,7 +162,7 @@ print() const
     {
       tok.print();
 
-      printf("\n");
+      printf(" ");
     }
 }
 

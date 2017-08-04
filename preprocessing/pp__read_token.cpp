@@ -139,6 +139,33 @@ read_identifier(Cursor&  cur)
 }
 
 
+/*
+void
+scan_ucn(char*  buf, int  n, Cursor&  cur)
+{
+    while(n--)
+    {
+      auto  c = *cur;
+
+        if(isxdigit(c))
+        {
+          cur += 1;
+
+          *buf++ = c;
+        }
+
+      else
+        {
+          throw Error(cur,"%s UCNには使えない文字",__func__);
+        }
+    }
+
+
+  *buf = 0;
+}
+*/
+
+
 std::string
 read_quoted(Cursor&  cur,  char  key_char)
 {
@@ -158,6 +185,8 @@ read_quoted(Cursor&  cur,  char  key_char)
         {
           cur += 1;
 
+//          char  ubuf[16];
+
             switch(*cur)
             {
           case('0'):  s.push_back('\0');break;
@@ -167,6 +196,8 @@ read_quoted(Cursor&  cur,  char  key_char)
           case('\\'): s.push_back('\\');break;
           case('\''): s.push_back('\'');break;
           case('\"'): s.push_back('\"');break;
+//          case('u'): scan_ucn(ubuf,4,cur);  s.append(ubuf);break;
+//          case('U'): scan_ucn(ubuf,8,cur);  s.append(ubuf);break;
           default: throw Error(cur,"クオート列に処理不可なエスケープ文字");
             }
 

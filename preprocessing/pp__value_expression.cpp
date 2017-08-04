@@ -271,7 +271,36 @@ value_expression(TokenString::const_iterator&  it, Context const&  ctx)
 
             if(tok == "defined")
             {
+              bool  enclosed = (*it == "(");
+
+                if(enclosed)
+                {
+                  it += 1;
+                }
+
+
+                if(*it != TokenKind::identifier)
+                {
+                  throw Error(Cursor(),"%s definedのあとに識別子がない",__func__);
+                }
+
+
+              long  l = ctx.find_macro(**it)? 1:0;
+
+              output.emplace_back(operate(unop_stack,l));
+
               it += 1;
+
+                if(enclosed)
+                {
+                    if(*it != ")")
+                    {
+                      throw Error(Cursor(),"%s definedのあとの括弧が閉じられていない",__func__);
+                    }
+
+
+                  it += 1;
+                }
             }
 
           else
@@ -291,7 +320,7 @@ value_expression(TokenString::const_iterator&  it, Context const&  ctx)
 
               else
                 {
-                  throw Error(Cursor(),"%s 不明な識別子",__func__);
+                  throw Error(Cursor(),"%s 不明な識別子 %s",__func__,tok->data());
                 }
             }
         }
@@ -375,8 +404,6 @@ long
 value_expression(std::string const&  s, Context const&  ctx)
 {
   auto  toks = process_text(s);
-
-  toks = process_token_string(toks,ctx);
 
   auto  it = toks.cbegin();
 
