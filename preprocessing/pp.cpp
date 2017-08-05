@@ -98,6 +98,55 @@ read_directive(Cursor&  cur)
 
 
 TokenString
+process_identifier(Token const&  id, TokenString::const_iterator&  it, Context const&  ctx, Macro const*  parent)
+{
+    if(*id == "__FILE__")
+    {
+      auto  tok = Token(TokenKind::string,std::string(id.get_info().get_file_path()));
+
+      return TokenString(std::move(tok));
+    }
+
+  else
+    if(*id == "__LINE__")
+    {
+      auto  tok = Token(TokenKind::decimal_integer,std::to_string(id.get_info().get_line_count()));
+
+      return TokenString(std::move(tok));
+    }
+
+
+  auto  macro = ctx.find_macro(*id);
+
+    if(macro && (macro != parent))
+    {
+        if(macro->is_function_style())
+        {
+            if(*it != '(')
+            {
+              throw Error(Cursor(),"%sは関数マクロですが、実引数リストがありませsん",macro->get_name().data());
+            }
+
+
+          it += 1;
+
+          auto  args = read_argument_list(it,ctx);
+
+          return macro->expand(ctx,&args);
+        }
+
+      else
+        {
+          return macro->expand(ctx,nullptr);
+        }
+    }
+
+
+  return TokenString();
+}
+
+
+TokenString
 process_text(std::string const&  s)
 {
   Cursor  cur(s);

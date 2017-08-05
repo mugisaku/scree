@@ -9,36 +9,12 @@
 namespace preprocessing{
 
 
-enum class
-IfDirectiveKind
-{
-  if_,
-  ifdef,
-  ifndef,
-  elif,
-  else_,
-  endif,
-
-};
-
-
 struct
 Context
 {
-  static constexpr int  matched_flag = 1;
-  static constexpr int   locked_flag = 2;
+  std::vector<std::string>  include_directory_list;
 
   std::list<Macro>  macro_table;
-
-  std::vector<IfDirectiveKind>  if_stack;
-
-  int  if_depth=0;
-
-  std::vector<uint8_t>  flags_stack;
-
-  void    set(int  flag){flags_stack.back() |=  flag;}
-  void  unset(int  flag){flags_stack.back() &= ~flag;}
-  bool   test(int  flag) const{return(flags_stack.back()&flag);}
 
 public:
   Context();
@@ -48,9 +24,9 @@ public:
   void  append_macro(Macro&&  macro){macro_table.emplace_back(std::move(macro));}
   void  remove_macro(std::string const&  name);
 
-  void  accept_if_directive(IfDirectiveKind  k, char const*  expression=nullptr);
+  void  append_include_directory(std::string&&  path){include_directory_list.emplace_back(std::move(path));}
 
-  bool  test_locked_flag() const{return test(locked_flag);}
+  std::vector<std::string> const&  get_include_directory_list() const{return include_directory_list;}
 
   void  print() const;
 

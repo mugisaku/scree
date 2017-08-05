@@ -16,7 +16,28 @@ read_path(Cursor&  cur)
     {
       auto  const c = *cur;
 
-        if(isalnum(c) || (c == '_') || (c == '/') || (c == '.'))
+        if(isalnum(c) ||
+           (c == '_') ||
+           (c == '+') ||
+           (c == '-') ||
+           (c == '!') ||
+           (c == '#') ||
+           (c == '$') ||
+           (c == '%') ||
+           (c == '&') ||
+           (c == '(') ||
+           (c == ')') ||
+           (c == '{') ||
+           (c == '}') ||
+           (c == '<') ||
+           (c == '>') ||
+           (c == '=') ||
+           (c == '[') ||
+           (c == ']') ||
+           (c == ':') ||
+           (c == ';') ||
+           (c == ',') ||
+           (c == '.'))
         {
           cur += 1;
 
@@ -34,6 +55,32 @@ read_path(Cursor&  cur)
 }
 
 
+std::pair<FILE*,std::string>
+open_file(std::string const&  src_path, std::vector<std::string> const&  incdir_list)
+{
+    for(auto&  incdir: incdir_list)
+    {
+      std::string  path = incdir;
+
+        if(path.back() != '/')
+        {
+          path += '/';
+        }
+
+
+      path += src_path;
+
+      auto  f = fopen(path.data(),"rb+");
+
+        if(f)
+        {
+          return std::make_pair(f,std::move(path));
+        }
+    }
+
+
+  return std::make_pair<FILE*,std::string>(nullptr,std::string());
+}
 }
 
 
@@ -44,11 +91,15 @@ read_include(Cursor&  cur, Context&  ctx)
   std::string  content;
   std::string     path;
 
+  bool  system_flag = false;
+
     if(*cur == '<')
     {
       cur += 1;
 
       skip_spaces(cur);
+
+      system_flag = true;
     }
 
   else
@@ -63,7 +114,9 @@ read_include(Cursor&  cur, Context&  ctx)
   path = read_path(cur);
 
 
-  auto  f = fopen(path.data(),"rb");
+  auto  res = open_file(path,ctx.get_include_directory_list());
+
+  auto  f = res.first;
 
     if(!f)
     {
@@ -96,7 +149,7 @@ read_include(Cursor&  cur, Context&  ctx)
   fclose(f);
 
 
-  auto  toks = process_file(content,new std::string(std::move(path)));
+  auto  toks = process_file(content,new std::string(std::move(res.second)));
 
   return process_token_string_that_includes_directives(std::move(toks),ctx);
 }
