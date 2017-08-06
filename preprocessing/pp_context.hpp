@@ -9,7 +9,9 @@
 namespace preprocessing{
 
 
-struct
+
+
+class
 Context
 {
   std::vector<std::string>  include_directory_list;

@@ -55,6 +55,7 @@ set(SOURCES
   preprocessing/pp_macro__expand.cpp
   preprocessing/pp_context.cpp
   preprocessing/pp_cursor.cpp
+  preprocessing/pp_ConditionState.cpp
   preprocessing/pp.cpp
   preprocessing/pp__skip.cpp
   preprocessing/pp__process_token_string.cpp

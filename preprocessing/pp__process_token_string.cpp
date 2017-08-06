@@ -4,6 +4,7 @@
 #include<cctype>
 #include<vector>
 #include"pp.hpp"
+#include"pp_ConditionState.hpp"
 
 
 namespace preprocessing{
@@ -46,168 +47,8 @@ read_print(Cursor&  cur)
 }
 
 
-enum class
-IfDirectiveKind
-{
-  if_,
-  ifdef,
-  ifndef,
-  elif,
-  else_,
-  endif,
-
-};
-
-
-class
-ConditionalState
-{
-  std::vector<IfDirectiveKind>  if_stack;
-
-  int  if_depth=0;
-
-  bool  locked=false;
-  bool  closed=false;
-
-public:
-  operator bool() const{return !locked;}
-
-  bool  is_locked() const{return locked;}
-  bool  is_not_closed() const{return !closed;}
-
-  void  enter()
-  {
-    if_depth += 1;
-
-    locked = false;
-    closed =  true;
-  }
-
-  void  up()
-  {
-      if(closed)
-      {
-        if_depth -= 1;
-      }
-
-
-    locked = false;
-    closed = false;
-  }
-
-
-  void  lock(){locked = true;}
-
-  int  get_depth() const{return if_depth;}
-
-  void  check(IfDirectiveKind  k, Context const&  ctx, char const*  expression);
-
-};
-
-
-bool
-test_identifier(std::string const&  s, Context const&  ctx)
-{
-  Cursor  cur(s);
-
-    if(!isident0(*cur))
-    {
-      throw Error(cur,"識別子がない");
-    }
-
-
-  auto  id = read_identifier(cur);
-
-  skip_spaces(cur);
-
-    if(*cur)
-    {
-      throw Error(cur,"識別子の後に余計なものがあります");
-    }
-
-
-  return ctx.find_macro(id);
-}
-
-
-void
-ConditionalState::
-check(IfDirectiveKind  k, Context const&  ctx, char const*  expression)
-{
-  std::string  s(expression? expression:"");
-
-    if(if_stack.size())
-    {
-        if((k               == IfDirectiveKind::elif ) &&
-           (if_stack.back() == IfDirectiveKind::else_))
-        {
-          throw Error(Cursor(),"elseの後にelifが現れた");
-        }
-    }
-
-  else
-    if((k == IfDirectiveKind::else_) ||
-       (k == IfDirectiveKind::elif ) ||
-       (k == IfDirectiveKind::endif))
-    {
-      throw Error(Cursor(),"ifが無ければ、elif.else,endifは不正");
-    }
-
-
-  if_stack.emplace_back(k);
-
-    switch(k)
-    {
-  case(IfDirectiveKind::if_):
-        if(value_expression(s,ctx)){enter();}
-      else                         { lock();}
-      break;
-  case(IfDirectiveKind::ifdef):
-        if(test_identifier(s,ctx)){enter();}
-      else                        { lock();}
-      break;
-  case(IfDirectiveKind::ifndef):
-        if(!test_identifier(s,ctx)){enter();}
-      else                         { lock();}
-      break;
-  case(IfDirectiveKind::elif):
-        if(is_not_closed())
-        {
-            if(value_expression(s,ctx)){enter();}
-          else                         { lock();}
-        }
-
-      else
-        {
-          lock();
-        }
-      break;
-  case(IfDirectiveKind::else_):
-        if(is_not_closed())
-        {
-          enter();
-        }
-
-      else
-        {
-          lock();
-        }
-      break;
-  case(IfDirectiveKind::endif):
-        if(!if_depth)
-        {
-          throw Error(Cursor(),"対応するif文が無い");
-        }
-
-
-      up();
-      break;
-    }
-}
-
-
 TokenString
-process_directive(std::string const&  s, Context&  ctx, ConditionalState&  cond_st)
+process_directive(std::string const&  s, Context&  ctx, ConditionState&  cond_st)
 {
   TokenString  toks;
 
@@ -248,7 +89,7 @@ process_token_string_that_includes_directives(TokenString const&  src, Context& 
 {
   TokenString  toks;
 
-  ConditionalState  cond_st;
+  ConditionState  cond_st;
 
   auto         it = src.cbegin();
   auto  const end = src.cend();
@@ -289,7 +130,7 @@ process_token_string_that_includes_directives(TokenString const&  src, Context& 
     }
 
 
-    if(cond_st.get_depth())
+    if(cond_st.get_depth() > 1)
     {
       throw Error(Cursor(),"対応するif文が無い");
     }

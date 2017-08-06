@@ -62,7 +62,7 @@ public:
   const_iterator  cbegin() const{return pointer;}
   const_iterator    cend() const{return pointer+length;}
 
-  void  print() const;
+  void  print(bool  newline=false) const;
 
 };
 

@@ -259,7 +259,7 @@ printf("token string processing is end\n");
 
 
 printf("**processed**\n");
-  toks.print();
+  toks.print(true);
 printf("**context**\n");
   ctx.print();
   

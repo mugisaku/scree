@@ -66,16 +66,16 @@ print() const
   case(TokenKind::hexadecimal_integer):
   case(TokenKind::operator_):
   case(TokenKind::identifier):
-      printf(" %s ",string.data());
+      printf("%s ",string.data());
       break;
   case(TokenKind::string):
-      printf(" \"%s\" ",string.data());
+      printf("\"%s\" ",string.data());
       break;
   case(TokenKind::character):
-      printf(" \'%s\' ",string.data());
+      printf("\'%s\' ",string.data());
       break;
   case(TokenKind::directive):
-      printf("#%s\n",string.data());
+      printf("#%s",string.data());
       break;
     }
 }

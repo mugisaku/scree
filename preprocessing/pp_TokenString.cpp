@@ -156,13 +156,16 @@ clear()
 
 void
 TokenString::
-print() const
+print(bool  newline) const
 {
     for(auto&  tok: *this)
     {
       tok.print();
 
-      printf(" ");
+        if(newline)
+        {
+          printf("\n");
+        }
     }
 }
 
