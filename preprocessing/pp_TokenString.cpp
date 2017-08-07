@@ -156,11 +156,11 @@ clear()
 
 void
 TokenString::
-print(bool  newline) const
+print(FILE*  out, bool  newline) const
 {
     for(auto&  tok: *this)
     {
-      tok.print();
+      tok.print(out);
 
         if(newline)
         {

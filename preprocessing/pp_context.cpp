@@ -90,6 +90,17 @@ print() const
 
       printf("\n");
     }
+
+
+  printf("インクルード・ディレクトリー・リスト\n");
+
+    for(auto&  incdir: include_directory_list)
+    {
+      printf("%s%s\n",incdir.data(),(incdir.back() != '/')? "/":"");
+    }
+
+
+  printf("\n");
 }
 
 

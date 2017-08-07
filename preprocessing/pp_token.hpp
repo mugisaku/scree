@@ -87,7 +87,7 @@ public:
 
   std::string  release(){return std::move(string);}
 
-  void  print() const;
+  void  print(FILE*  out=stdout) const;
 
 };
 

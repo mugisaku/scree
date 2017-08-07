@@ -69,12 +69,7 @@ set(SOURCES
 
 include_directories(.)
 include_directories(./preprocessing)
-add_executable("testfs${EXTENSION}" ${SOURCES} ${EXPREE_SOURCES})
-
-
-if(EM)
-  set_target_properties("testBuilder${EXTENSION}" PROPERTIES LINK_FLAGS "--shell-file ../shell__tB.html")
-endif()
+add_executable("pp${EXTENSION}" ${SOURCES} ${EXPREE_SOURCES})
 
 
 

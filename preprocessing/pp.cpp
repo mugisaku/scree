@@ -3,44 +3,8 @@
 #include<cstring>
 #include<cctype>
 #include<vector>
+#include<getopt.h>
 #include"pp.hpp"
-
-
-namespace{
-
-
-std::string
-load_file(const char*  path)
-{
-  auto  f = fopen(path,"rb");
-
-  std::string  s;
-
-    if(f)
-    {
-        for(;;)
-        {
-          auto  c = fgetc(f);
-
-            if(feof(f))
-            {
-              break;
-            }
-
-
-          s.push_back(c);
-        }
-
-
-      fclose(f);
-    }
-
-
-  return std::move(s);
-}
-
-
-}
 
 
 namespace preprocessing{
@@ -227,26 +191,220 @@ process_file(std::string const&  s, std::string*  file_path)
 }
 
 
+namespace{
+
+
+FILE*   in;
+FILE*  out;
+
+char const*  in_path;
+
+bool  quiet;
+
+
+std::string
+load_file(FILE*  f)
+{
+  std::string  s;
+
+    if(f)
+    {
+        for(;;)
+        {
+          auto  c = fgetc(f);
+
+            if(feof(f) || ferror(f))
+            {
+              break;
+            }
+
+
+          s.push_back(c);
+        }
+
+
+      fclose(f);
+    }
+
+
+  return std::move(s);
+}
+
+
+void
+process_option(int  argc, char**  argv, preprocessing::Context&  ctx)
+{
+  static struct option  const options[] = {
+    {"help",no_argument,nullptr,'h'},
+    {"quiet",no_argument,nullptr,'q'},
+  };
+
+
+  std::vector<std::string>  u_list;
+
+    for(;;)
+    {
+      auto  c = getopt_long(argc,argv,"D::U:I:",options,nullptr);
+
+        switch(c)
+        {
+      case('D'):
+          {
+            char   name[256]      ;
+            char  value[256] = "1";
+
+            auto  res = sscanf(optarg,"%256s=%256s",name,value);
+
+              if(res >= 1)
+              {
+                std::string  s(name);
+
+                preprocessing::Macro  m(std::move(s));
+
+
+                std::string  vs(value);
+
+                m.set_token_string(preprocessing::process_text(vs));
+
+                ctx.append_macro(std::move(m));
+              }
+          }
+          break;
+      case('U'):
+          {
+            char  name[256];
+
+              if(sscanf(optarg,"%256s",name) == 1)
+              {
+                u_list.emplace_back(name);
+              }
+          }
+          break;
+      case('I'):
+          {
+            char  path[256];
+
+              if(sscanf(optarg,"%256s",path) == 1)
+              {
+                ctx.append_include_directory(std::string(path));
+              }
+          }
+          break;
+      case('h'):
+          printf("使い方: pp {オプション | [入力ファイルパス]} [出力ファイルパス]\n");
+          printf("オプション\n");
+          printf("-Dname[=value]  valueをnameという名前で定義する\n");
+          printf("-Uname          nameという名の定義を消す\n");
+          printf("-Ipath          インクルードファイルを探す先に、pathを追加する\n");
+          printf("入力ファイルパスに \"--\" が渡されるか省略された場合、標準入力から読み込む\n");
+          printf("出力ファイルパスに \"--\" か渡されるか省略された場合、標準出力へ書き込む\n");
+          printf("\n");
+          exit(0);
+          break;
+      case('q'):
+          quiet = true;
+          break;
+      case('?'):
+          break;
+      case(-1):
+            for(int  i = optind;  i < argc;  ++i)
+            {
+              std::string  arg(argv[i]);
+
+                if(arg == "--")
+                {
+                    if(!in){ in =  stdin;}
+                  else     {out = stdout;}
+                }
+
+              else
+                {
+                  auto  path = arg.data();
+
+                    if(!in)
+                    {
+                      in_path = path;
+
+                      in = fopen(path,"rb");
+
+                        if(!in)
+                        {
+                          printf("入力ファイル%sを開けませんでした\n",path);
+
+                          exit(-1);
+                        }
+                    }
+
+                  else
+                    {
+                      out = fopen(path,"wb");
+
+                        if(!out)
+                        {
+                          printf("出力ファイル%sを開けませんでした\n",path);
+
+                          exit(-1);
+                        }
+                    }
+                }
+            }
+
+
+            if(!in)
+            {
+              in = stdin;
+            }
+
+
+            if(!out)
+            {
+              out = stdout;
+            }
+
+
+            for(auto&  s: u_list)
+            {
+              ctx.remove_macro(s);
+            }
+          return;
+        }
+    }
+
+}
+
+
+}
+
+
 int
 main(int  argc, char**  argv)
 {
-  auto  path = argv[1];
-
-  auto  s = load_file(path);
-
   preprocessing::Context  ctx;
 
   preprocessing::TokenString  toks;
 
+
+  process_option(argc,argv,ctx);
+
+
+  auto  s = load_file(in);
+
     try
     {
-      toks = preprocessing::process_file(s,new std::string(path));
+      toks = preprocessing::process_file(s,new std::string(std::move(in_path)));
 
-printf("file processing is end\n");
+        if(!quiet)
+        {
+          printf("file processing is end\n");
+        }
+
 
       toks = preprocessing::process_token_string_that_includes_directives(std::move(toks),ctx);
 
-printf("token string processing is end\n");
+        if(!quiet)
+        {
+          printf("token string processing is end\n");
+        }
     }
 
 
@@ -258,11 +416,13 @@ printf("token string processing is end\n");
     }
 
 
-printf("**processed**\n");
-  toks.print(true);
-printf("**context**\n");
-  ctx.print();
-  
+  toks.print(out,true);
+
+    if(!quiet)
+    {
+      ctx.print();
+    }
+
 
   return 0;
 }

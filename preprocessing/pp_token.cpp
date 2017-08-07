@@ -53,12 +53,12 @@ to_string() const
 
 void
 Token::
-print() const
+print(FILE*  out) const
 {
     switch(kind)
     {
   case(TokenKind::null):
-      printf(" NULL ");
+      fprintf(out," NULL ");
       break;
   case(TokenKind::binary_integer):
   case(TokenKind::octal_integer):
@@ -66,16 +66,16 @@ print() const
   case(TokenKind::hexadecimal_integer):
   case(TokenKind::operator_):
   case(TokenKind::identifier):
-      printf("%s ",string.data());
+      fprintf(out,"%s ",string.data());
       break;
   case(TokenKind::string):
-      printf("\"%s\" ",string.data());
+      fprintf(out,"\"%s\" ",string.data());
       break;
   case(TokenKind::character):
-      printf("\'%s\' ",string.data());
+      fprintf(out,"\'%s\' ",string.data());
       break;
   case(TokenKind::directive):
-      printf("#%s",string.data());
+      fprintf(out,"#%s",string.data());
       break;
     }
 }
