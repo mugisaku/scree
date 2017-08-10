@@ -55,15 +55,19 @@ set(SOURCES
   preprocessing/pp_macro__expand.cpp
   preprocessing/pp_context.cpp
   preprocessing/pp_cursor.cpp
+  preprocessing/pp_expression.cpp
   preprocessing/pp_ConditionState.cpp
   preprocessing/pp.cpp
+  preprocessing/pp__tokenize.cpp
   preprocessing/pp__skip.cpp
+  preprocessing/pp__is.cpp
   preprocessing/pp__process_token_string.cpp
+  preprocessing/pp__process_identifier.cpp
   preprocessing/pp__read_include.cpp
   preprocessing/pp__read_define.cpp
   preprocessing/pp__read_token.cpp
   preprocessing/pp__read_argument.cpp
-  preprocessing/pp__value_expression.cpp
+  preprocessing/pp__make_expression.cpp
 )
 
 

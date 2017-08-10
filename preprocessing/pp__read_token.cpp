@@ -84,8 +84,11 @@ read_operator(Cursor&  cur)
   else if(cur.compare('&','&'    )){s = "&&";}
   else if(cur.compare(':',':'    )){s = "::";}
   else if(cur.compare(':'        )){s = ":";}
+  else if(cur.compare(';'        )){s = ";";}
   else if(cur.compare('='        )){s = "=";}
   else if(cur.compare('!'        )){s = "!";}
+  else if(cur.compare('?'        )){s = "?";}
+  else if(cur.compare('#'        )){s = "#";}
   else if(cur.compare('~'        )){s = "~";}
   else if(cur.compare('^'        )){s = "^";}
   else if(cur.compare('+'        )){s = "+";}
@@ -315,6 +318,8 @@ read_token(Cursor&  cur)
 
   return std::move(tok);
 }
+
+
 
 
 }

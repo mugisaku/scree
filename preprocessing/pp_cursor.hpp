@@ -26,9 +26,9 @@ Cursor
 public:
   constexpr Cursor(){}
 
-  Cursor(std::string const&  s, std::string*  file_path_=nullptr):
-  file_path(file_path_),
-  head(s.data()), pointer(s.data()){}
+  explicit Cursor(char const*  p, char const*  file_path_=nullptr):
+  file_path(new std::string(file_path_? file_path_:"")),
+  head(p), pointer(p){}
 
   Cursor&  operator+=(int  n);
 
@@ -58,9 +58,19 @@ public:
 struct
 Error: public std::exception
 {
-  Cursor  const  cursor;
+  Cursor const  cursor;
 
   char  buffer[256];
+
+  Error(char const*  fmt="", ...)
+  {
+    va_list  ap;
+    va_start(ap,fmt);
+
+    vsnprintf(buffer,sizeof(buffer),fmt,ap);
+
+    va_end(ap);
+  }
 
   Error(Cursor const&  cur, char const*  fmt="", ...): cursor(cur)
   {

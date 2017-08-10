@@ -29,7 +29,7 @@ extend()
     }
 
   else
-    if((length+1) > allocated_length)
+    if((length+1) >= allocated_length)
     {
       auto  new_allocated_length = allocated_length*2;
 

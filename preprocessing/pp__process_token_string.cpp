@@ -48,7 +48,7 @@ read_print(Cursor&  cur)
 
 
 TokenString
-process_directive(std::string const&  s, Context&  ctx, ConditionState&  cond_st)
+process_directive(char const*  s, Context&  ctx, ConditionState&  cond_st)
 {
   TokenString  toks;
 
@@ -58,22 +58,37 @@ process_directive(std::string const&  s, Context&  ctx, ConditionState&  cond_st
 
     if(isalpha(*cur) || (*cur == '_'))
     {
+      Cursor  const saved = cur;
+
       auto  id = read_identifier(cur);
 
       skip_space(cur);
 
-           if(id == "include"){if(cond_st){toks = read_include(cur,ctx);}}
-      else if(id == "define"){if(cond_st){read_define(       cur,ctx);}}
-      else if(id == "undef" ){if(cond_st){read_undef(        cur,ctx);}}
-      else if(id == "ifdef" ){cond_st.check(IfDirectiveKind::ifdef ,ctx,cur.to_pointer());}
-      else if(id == "ifndef"){cond_st.check(IfDirectiveKind::ifndef,ctx,cur.to_pointer());}
-      else if(id == "if"    ){cond_st.check(IfDirectiveKind::if_   ,ctx,cur.to_pointer());}
-      else if(id == "elif"  ){cond_st.check(IfDirectiveKind::elif  ,ctx,cur.to_pointer());}
-      else if(id == "else"  ){cond_st.check(IfDirectiveKind::else_ ,ctx,cur.to_pointer());}
-      else if(id == "endif" ){cond_st.check(IfDirectiveKind::endif ,ctx,cur.to_pointer());}
-      else if(id == "error"){if(cond_st){throw Error(cur,"#error");}}
-      else if(id == "print"){if(cond_st){read_print(cur);}}
-      else{throw Error(cur,"未対応のディレクティブ");}
+        try
+        {
+               if(id == "include"){if(cond_st){toks = read_include(cur,ctx);}}
+          else if(id == "define"){if(cond_st){read_define(       cur,ctx);}}
+          else if(id == "undef" ){if(cond_st){read_undef(        cur,ctx);}}
+          else if(id == "ifdef" ){cond_st.check(IfDirectiveKind::ifdef ,ctx,cur.to_pointer());}
+          else if(id == "ifndef"){cond_st.check(IfDirectiveKind::ifndef,ctx,cur.to_pointer());}
+          else if(id == "if"    ){cond_st.check(IfDirectiveKind::if_   ,ctx,cur.to_pointer());}
+          else if(id == "elif"  ){cond_st.check(IfDirectiveKind::elif  ,ctx,cur.to_pointer());}
+          else if(id == "else"  ){cond_st.check(IfDirectiveKind::else_ ,ctx,cur.to_pointer());}
+          else if(id == "endif" ){cond_st.check(IfDirectiveKind::endif ,ctx,cur.to_pointer());}
+          else if(id == "error"){if(cond_st){throw Error(cur,"#error");}}
+          else if(id == "pragma"){if(cond_st){}}
+          else if(id == "warning"){if(cond_st){}}
+          else if(id == "print"){if(cond_st){read_print(cur);}}
+          else{throw Error(cur,"未対応のディレクティブ %s",id.data());}
+        }
+
+
+        catch(Error&  e)
+        {
+          saved.print();
+
+          throw;
+        }
     }
 
 
@@ -81,18 +96,17 @@ process_directive(std::string const&  s, Context&  ctx, ConditionState&  cond_st
 }
 
 
-}
-
-
-TokenString
-process_token_string_that_includes_directives(TokenString const&  src, Context&  ctx)
+void
+step_process_token_string_that_includes_directives(TokenString&  toks, Context&  ctx)
 {
-  TokenString  toks;
+  TokenString  tmps;
 
   ConditionState  cond_st;
 
-  auto         it = src.cbegin();
-  auto  const end = src.cend();
+  TokenKind  last_k = TokenKind::null;
+
+  auto         it = toks.begin();
+  auto  const end = toks.end();
 
     while(it != end)
     {
@@ -101,7 +115,7 @@ process_token_string_that_includes_directives(TokenString const&  src, Context& 
 
         if(tok == TokenKind::directive)
         {
-          toks += process_directive(*tok,ctx,cond_st);
+          tmps += process_directive(tok->data(),ctx,cond_st);
         }
 
       else
@@ -109,24 +123,25 @@ process_token_string_that_includes_directives(TokenString const&  src, Context& 
         {
             if(tok == TokenKind::identifier)
             {
-              auto  res = process_identifier(tok,it,ctx);
-
-                if(res.size())
+                if(Token::is_integer(last_k) && is_integer_suffix(*tok))
                 {
-                  toks += res;
+                  tmps.back().set_suffix(*tok);
                 }
 
               else
+                if(process_identifier(--it,tmps,ctx))
                 {
-                  toks += tok;
                 }
             }
 
           else
             {
-              toks += std::move(tok);
+              tmps += std::move(tok);
             }
         }
+
+
+      last_k = tmps.back().get_kind();
     }
 
 
@@ -136,17 +151,21 @@ process_token_string_that_includes_directives(TokenString const&  src, Context& 
     }
 
 
-  return std::move(toks);
+  toks = std::move(tmps);
 }
 
 
-TokenString
-process_token_string(TokenString const&  src, Context const&  ctx)
+int
+step_process_token_string_for_expression(TokenString&  toks, Context const&  ctx)
 {
-  TokenString  toks;
+  int  count = 0;
 
-  auto         it = src.cbegin();
-  auto  const end = src.cend();
+  TokenString  tmps;
+
+  TokenKind  last_k = TokenKind::null;
+
+  auto         it = toks.begin();
+  auto  const end = toks.end();
 
     while(it != end)
     {
@@ -155,27 +174,162 @@ process_token_string(TokenString const&  src, Context const&  ctx)
 
         if(tok == TokenKind::identifier)
         {
-          auto  res = process_identifier(tok,it,ctx);
-
-            if(res.size())
+            if(tok == "defined")
             {
-              toks += res;
+              bool  const enclosed = (*it == "(");
+
+                if(enclosed)
+                {
+                  it += 1;
+                }
+
+
+                if(*it != TokenKind::identifier)
+                {
+                  throw Error(Cursor(),"%s definedのあとに識別子がない",__func__);
+                }
+
+
+              tmps += Token(ctx.find_macro(**it)? 1:0);
+
+              it += 1;
+
+                if(enclosed)
+                {
+                    if(*it != ")")
+                    {
+                      throw Error(Cursor(),"%s definedのあとの括弧が閉じられていない",__func__);
+                    }
+
+
+                  it += 1;
+                }
+
+
+              ++count;
             }
 
           else
+            if(Token::is_integer(last_k) && is_integer_suffix(*tok))
             {
-              toks += tok;
+              tmps.back().set_suffix(*tok);
+
+              ++count;
+            }
+
+          else
+            if(process_identifier(--it,tmps,ctx))
+            {
+              ++count;
             }
         }
 
       else
         {
-          toks += std::move(tok);
+          tmps += std::move(tok);
         }
+
+
+      last_k = tmps.back().get_kind();
     }
 
 
-  return std::move(toks);
+  toks = std::move(tmps);
+
+  return count;
+}
+
+
+int
+step_process_token_string(TokenString&  toks, Context const&  ctx)
+{
+  int  count = 0;
+
+  TokenString  tmps;
+
+  TokenKind  last_k = TokenKind::null;
+
+  auto         it = toks.begin();
+  auto  const end = toks.end();
+
+    while(it != end)
+    {
+      auto&  tok = *it     ;
+                    it += 1;
+
+        if(tok == TokenKind::identifier)
+        {
+            if(Token::is_integer(last_k) && is_integer_suffix(*tok))
+            {
+              tmps.back().set_suffix(*tok);
+
+              ++count;
+            }
+
+          else
+            if(process_identifier(--it,tmps,ctx))
+            {
+              ++count;
+            }
+        }
+
+      else
+        {
+          tmps += std::move(tok);
+        }
+
+
+      last_k = tmps.back().get_kind();
+    }
+
+
+  toks = std::move(tmps);
+
+  return count;
+}
+
+
+}
+
+
+void
+process_token_string_that_includes_directives(TokenString&  toks, Context&  ctx)
+{
+  step_process_token_string_that_includes_directives(toks,ctx);
+
+    for(;;)
+    {
+        if(!step_process_token_string(toks,ctx))
+        {
+          break;
+        }
+    }
+}
+
+
+void
+process_token_string_for_expression(TokenString&  toks, Context const&  ctx)
+{
+    for(;;)
+    {
+        if(!step_process_token_string_for_expression(toks,ctx))
+        {
+          break;
+        }
+    }
+}
+
+
+void
+process_token_string(TokenString&  toks, Context const&  ctx)
+{
+    for(;;)
+    {
+        if(!step_process_token_string(toks,ctx))
+        {
+          break;
+        }
+    }
 }
 
 

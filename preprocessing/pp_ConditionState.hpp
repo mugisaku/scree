@@ -31,7 +31,7 @@ IfDirectiveKind
 class
 ConditionState
 {
-  std::vector<IfDirectiveKind>  if_stack;
+  IfDirectiveKind  last_if=IfDirectiveKind::endif;
 
   struct StackFrame{
     bool  closed;
@@ -57,7 +57,7 @@ public:
 
   int  get_depth() const{frames.size();}
 
-  void  check(IfDirectiveKind  k, Context const&  ctx, char const*  expression);
+  void  check(IfDirectiveKind  k, Context const&  ctx, char const*  expression_text);
 
 };
 

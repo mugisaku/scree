@@ -17,10 +17,12 @@ enum class
 TokenKind
 {
   null,
+
   binary_integer,
   octal_integer,
   decimal_integer,
   hexadecimal_integer,
+  real,
   character,
   string,
   identifier,
@@ -28,7 +30,6 @@ TokenKind
   directive,
 
 };
-
 
 
 class
@@ -59,7 +60,9 @@ Token
 {
   TokenKind  kind=TokenKind::null;
 
+  std::string  prefix;
   std::string  string;
+  std::string  suffix;
 
   TokenInfo  info;
 
@@ -67,6 +70,10 @@ public:
   Token(){}
   Token(TokenKind  k, std::string&&  s, TokenInfo&&  info_=TokenInfo()):
   kind(k), string(std::move(s)), info(std::move(info_)){}
+
+  Token(int  d, TokenInfo&&  info_=TokenInfo()):
+  kind(TokenKind::decimal_integer),string(std::to_string(d)), info(std::move(info_)){}
+
 
   bool  operator==(TokenKind  k) const{return kind == k;}
   bool  operator!=(TokenKind  k) const{return kind != k;}
@@ -77,10 +84,25 @@ public:
 
   operator bool() const{return kind != TokenKind::null;}
 
+  static bool  is_integer(TokenKind  k){return((k == TokenKind::binary_integer     ) ||
+                                               (k == TokenKind::octal_integer      ) ||
+                                               (k == TokenKind::decimal_integer    ) ||
+                                               (k == TokenKind::hexadecimal_integer));}
+
+  TokenKind  get_kind() const{return kind;}
+
+  std::string const&  get_prefix() const{return prefix;}
+  std::string const&  get_suffix() const{return suffix;}
+
+  void  set_prefix(std::string const&  s){prefix = s;}
+  void  set_suffix(std::string const&  s){suffix = s;}
+
   std::string const&  operator* () const{return  string;}
   std::string const*  operator->() const{return &string;}
 
   std::string  to_string() const;
+
+  long  to_integer() const;
 
   void  set_info(TokenInfo&&  info_){info = std::move(info_);}
   TokenInfo const&  get_info() const{return info;}

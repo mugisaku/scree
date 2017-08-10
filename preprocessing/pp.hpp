@@ -6,6 +6,7 @@
 #include"pp_token.hpp"
 #include"pp_TokenString.hpp"
 #include"pp_context.hpp"
+#include"pp_expression.hpp"
 #include<string>
 #include<cstdio>
 #include<algorithm>
@@ -39,19 +40,30 @@ TokenString  read_include(Cursor&  cur, Context&  ctx);
 void          read_define(Cursor&  cur, Context&  ctx);
 
 
-long  value_expression(TokenString::const_iterator&  it, Context const&  ctx);
-long  value_expression(std::string const&  s, Context const&  ctx);
+Expression  make_expression(TokenString::const_iterator&  it, Context const&  ctx);
+Expression  make_expression(char const*  text, Context const&  ctx);
+
+
+bool  is_u(char  c);
+bool  is_l(char  c);
+bool  is_ll(char const*  p);
+bool  is_ul(char const*  p);
+bool  is_integer_suffix(std::string const&  s);
 
 
 Token  read_token(Cursor&  cur);
 
-TokenString  process_identifier(Token const&  id, TokenString::const_iterator&  it, Context const&  ctx, Macro const*  parent=nullptr);
 
-TokenString  process_file(std::string const&  s, std::string*  file_path);
-TokenString  process_text(std::string const&  s                         );
+TokenString  tokenize_main_text(char const*  s, char const*  file_path);
+TokenString  tokenize_sub_text( char const*  s                        );
 
-TokenString  process_token_string_that_includes_directives(TokenString const&  src, Context&        ctx);
-TokenString  process_token_string(                         TokenString const&  src, Context const&  ctx);
+
+bool  process_identifier(TokenString::iterator&  it, TokenString&  buf, Context const&  ctx,
+                         Macro const*  parent=nullptr, ArgumentList const*  args=nullptr);
+
+void  process_token_string_that_includes_directives(TokenString&  toks, Context&        ctx);
+void  process_token_string_for_expression(          TokenString&  toks, Context const&  ctx);
+void  process_token_string(                         TokenString&  toks, Context const&  ctx);
 
 
 #define report  printf("[%s %s %4d]\n",__FILE__,__func__,__LINE__)

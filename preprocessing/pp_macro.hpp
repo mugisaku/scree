@@ -34,6 +34,7 @@ Macro
 
 public:
   Macro(std::string&&  name_): name(std::move(name_)){}
+  Macro(std::string&&  name_, int  v): name(std::move(name_)), token_string(Token(v)){}
 
   bool  operator==(std::string const&  name_) const{return name == name_;}
 

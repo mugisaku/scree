@@ -99,7 +99,15 @@ print() const
 
     if(pointer)
     {
-      printf("%c\n",*pointer);
+      auto  p = head;
+
+        while(*p && (*p != '\n'))
+        {
+          printf("%c",*p++);
+        }
+
+
+      printf("\n");
     }
 }
 

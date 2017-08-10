@@ -20,23 +20,7 @@ read_path(Cursor&  cur)
            (c == '_') ||
            (c == '+') ||
            (c == '-') ||
-           (c == '!') ||
-           (c == '#') ||
-           (c == '$') ||
-           (c == '%') ||
-           (c == '&') ||
-           (c == '(') ||
-           (c == ')') ||
-           (c == '{') ||
-           (c == '}') ||
-           (c == '<') ||
-           (c == '>') ||
-           (c == '=') ||
-           (c == '[') ||
-           (c == ']') ||
-           (c == ':') ||
-           (c == ';') ||
-           (c == ',') ||
+           (c == '/') ||
            (c == '.'))
         {
           cur += 1;
@@ -58,6 +42,8 @@ read_path(Cursor&  cur)
 std::pair<FILE*,std::string>
 open_file(std::string const&  src_path, std::vector<std::string> const&  incdir_list)
 {
+  std::vector<std::string>  failed_list;
+
     for(auto&  incdir: incdir_list)
     {
       std::string  path = incdir;
@@ -70,14 +56,25 @@ open_file(std::string const&  src_path, std::vector<std::string> const&  incdir_
 
       path += src_path;
 
-      auto  f = fopen(path.data(),"rb+");
+      auto  f = fopen(path.data(),"rb");
 
         if(f)
         {
           return std::make_pair(f,std::move(path));
         }
+
+
+      failed_list.emplace_back(std::move(path));
     }
 
+
+    for(auto&  path: failed_list)
+    {
+      printf("%s\n",path.data());
+    }
+
+
+  printf("上記のいずれでも、ファイルは開けなかった\n");
 
   return std::make_pair<FILE*,std::string>(nullptr,std::string());
 }
@@ -97,8 +94,6 @@ read_include(Cursor&  cur, Context&  ctx)
     {
       cur += 1;
 
-      skip_spaces(cur);
-
       system_flag = true;
     }
 
@@ -106,10 +101,15 @@ read_include(Cursor&  cur, Context&  ctx)
     if(*cur == '\"')
     {
       cur += 1;
-
-      skip_spaces(cur);
     }
 
+  else
+    {
+      throw Error(cur,"ファイル名が囲まれていない");
+    }
+
+
+  skip_spaces(cur);
 
   path = read_path(cur);
 
@@ -120,7 +120,7 @@ read_include(Cursor&  cur, Context&  ctx)
 
     if(!f)
     {
-      throw Error(cur,"インクルード指定されたパスが開けない");
+      throw Error(cur,"%sが開けない",path.data());
     }
 
 
@@ -149,9 +149,11 @@ read_include(Cursor&  cur, Context&  ctx)
   fclose(f);
 
 
-  auto  toks = process_file(content,new std::string(std::move(res.second)));
+  auto  toks = tokenize_main_text(content.data(),res.second.data());
 
-  return process_token_string_that_includes_directives(std::move(toks),ctx);
+  process_token_string_that_includes_directives(toks,ctx);
+
+  return std::move(toks);
 }
 
 

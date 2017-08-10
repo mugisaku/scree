@@ -7,197 +7,13 @@
 #include"pp.hpp"
 
 
-namespace preprocessing{
-
-
-std::string
-read_directive(Cursor&  cur)
-{
-  std::string  s;
-
-    for(;;)
-    {
-      auto  const c = *cur;
-
-        if(c == '\n')
-        {
-          break;
-        }
-
-      else
-        if((c ==  ' ') ||
-           (c == '\t') ||
-           (c == '\r'))
-        {
-          cur += 1;
-
-          s.push_back(' ');
-        }
-
-      else
-        if(cur.compare("\\\n"))
-        {
-          cur += 1;
-
-          cur.newline();
-        }
-
-      else
-        if(iscntrl(c))
-        {
-          throw Error(cur,"ディレクティブの途中で制御文字");
-        }
-
-      else
-        {
-          cur += 1;
-
-          s.push_back(c);
-        }
-    }
-
-
-  return std::move(s);
-}
-
-
-TokenString
-process_identifier(Token const&  id, TokenString::const_iterator&  it, Context const&  ctx, Macro const*  parent)
-{
-    if(*id == "__FILE__")
-    {
-      auto  tok = Token(TokenKind::string,std::string(id.get_info().get_file_path()));
-
-      return TokenString(std::move(tok));
-    }
-
-  else
-    if(*id == "__LINE__")
-    {
-      auto  tok = Token(TokenKind::decimal_integer,std::to_string(id.get_info().get_line_count()));
-
-      return TokenString(std::move(tok));
-    }
-
-
-  auto  macro = ctx.find_macro(*id);
-
-    if(macro && (macro != parent))
-    {
-        if(macro->is_function_style())
-        {
-            if(*it != '(')
-            {
-              throw Error(Cursor(),"%sは関数マクロですが、実引数リストがありませsん",macro->get_name().data());
-            }
-
-
-          it += 1;
-
-          auto  args = read_argument_list(it,ctx);
-
-          return macro->expand(ctx,&args);
-        }
-
-      else
-        {
-          return macro->expand(ctx,nullptr);
-        }
-    }
-
-
-  return TokenString();
-}
-
-
-TokenString
-process_text(std::string const&  s)
-{
-  Cursor  cur(s);
-
-  TokenString  toks;
-
-    for(;;)
-    {
-      skip_spaces(cur);
-
-      auto  tok = read_token(cur);
-
-        if(!tok)
-        {
-          break;
-        }
-
-      else
-        {
-          toks += std::move(tok);
-        }
-    }
-
-
-  return std::move(toks);
-}
-
-
-TokenString
-process_file(std::string const&  s, std::string*  file_path)
-{
-  Cursor  cur(s,file_path);
-
-  TokenString  toks;
-
-    if(*cur == '#')
-    {
-      TokenInfo  info(cur);
-
-      cur += 1;
-
-      toks += Token(TokenKind::directive,read_directive(cur),std::move(info));
-    }
-
-
-    while(*cur)
-    {
-        if(cur.compare('\n','#'))
-        {
-          cur.newline();
-
-          TokenInfo  info(cur);
-
-          cur += 1;
-
-          toks += Token(TokenKind::directive,read_directive(cur),std::move(info));
-        }
-
-      else
-        if(cur.compare('\n'))
-        {
-          cur.newline();
-        }
-
-      else
-        {
-          skip_spaces(cur);
-
-          toks += read_token(cur);
-        }
-    }
-
-
-  return std::move(toks);
-}
-
-
-}
-
-
 namespace{
 
 
 FILE*   in;
 FILE*  out;
 
-char const*  in_path;
+std::string  in_path;
 
 bool  quiet;
 
@@ -213,8 +29,16 @@ load_file(FILE*  f)
         {
           auto  c = fgetc(f);
 
-            if(feof(f) || ferror(f))
+            if(feof(f))
             {
+              break;
+            }
+
+
+            if(ferror(f))
+            {
+              printf("ファイル読み込み中にエラー");
+
               break;
             }
 
@@ -262,9 +86,7 @@ process_option(int  argc, char**  argv, preprocessing::Context&  ctx)
                 preprocessing::Macro  m(std::move(s));
 
 
-                std::string  vs(value);
-
-                m.set_token_string(preprocessing::process_text(vs));
+                m.set_token_string(preprocessing::tokenize_sub_text(value));
 
                 ctx.append_macro(std::move(m));
               }
@@ -291,13 +113,13 @@ process_option(int  argc, char**  argv, preprocessing::Context&  ctx)
           }
           break;
       case('h'):
-          printf("使い方: pp {オプション | [入力ファイルパス]} [出力ファイルパス]\n");
+          printf("使い方: pp {オプション} 入力ファイルパス [出力ファイルパス]\n");
           printf("オプション\n");
           printf("-Dname[=value]  valueをnameという名前で定義する\n");
           printf("-Uname          nameという名の定義を消す\n");
           printf("-Ipath          インクルードファイルを探す先に、pathを追加する\n");
-          printf("入力ファイルパスに \"--\" が渡されるか省略された場合、標準入力から読み込む\n");
-          printf("出力ファイルパスに \"--\" か渡されるか省略された場合、標準出力へ書き込む\n");
+          printf("入力ファイルパスに \"-\" が渡された場合、標準入力から読み込む。省略できない\n");
+          printf("出力ファイルパスに \"-\" か渡されるか省略された場合、標準出力へ書き込む\n");
           printf("\n");
           exit(0);
           break;
@@ -311,7 +133,7 @@ process_option(int  argc, char**  argv, preprocessing::Context&  ctx)
             {
               std::string  arg(argv[i]);
 
-                if(arg == "--")
+                if(arg == "-")
                 {
                     if(!in){ in =  stdin;}
                   else     {out = stdout;}
@@ -381,6 +203,13 @@ main(int  argc, char**  argv)
 {
   preprocessing::Context  ctx;
 
+  ctx.append_include_directory(std::string("../preprocessing"));
+  ctx.append_include_directory(std::string("/usr/include"));
+  ctx.append_include_directory(std::string("/usr/include/c++/5"));
+  ctx.append_include_directory(std::string("/usr/include/i386-linux-gnu"));
+  ctx.append_include_directory(std::string("/usr/include/i386-linux-gnu/c++/5"));
+
+
   preprocessing::TokenString  toks;
 
 
@@ -391,7 +220,7 @@ main(int  argc, char**  argv)
 
     try
     {
-      toks = preprocessing::process_file(s,new std::string(std::move(in_path)));
+      toks = preprocessing::tokenize_main_text(s.data(),in_path.data());
 
         if(!quiet)
         {
@@ -399,7 +228,7 @@ main(int  argc, char**  argv)
         }
 
 
-      toks = preprocessing::process_token_string_that_includes_directives(std::move(toks),ctx);
+      preprocessing::process_token_string_that_includes_directives(toks,ctx);
 
         if(!quiet)
         {
@@ -413,6 +242,8 @@ main(int  argc, char**  argv)
       e.cursor.print();
 
       printf("%s\n",e.what());
+
+      exit(-1);
     }
 
 

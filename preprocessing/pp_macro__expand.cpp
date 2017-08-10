@@ -9,39 +9,6 @@ namespace preprocessing{
 
 
 namespace{
-TokenString
-replace(std::string const&  id, ParameterList const&  parls, ArgumentList const&  argls)
-{
-    if(id == "__VA_ARGS__")
-    {
-      TokenString  s;
-
-        for(int  i = parls.size();  i < argls.size();  ++i)
-        {
-          s += Token(TokenKind::operator_,std::string(","));
-          s += argls[i];
-        }
-
-
-      return std::move(s);
-    }
-
-  else
-    {
-      int  const n = parls.size();
-
-        for(int  i = 0;  i < n;  ++i)
-        {
-            if(parls[i] == id)
-            {
-              return argls[i];
-            }
-        }
-    }
-
-
-  return TokenString();
-}
 
 
 bool
@@ -76,8 +43,8 @@ expand(Context const&  ctx, ArgumentList const*  args) const
 
   TokenString  output;
 
-  auto         it = token_string.cbegin();
-  auto  const end = token_string.cend();
+  auto         it = token_string.begin();
+  auto  const end = token_string.end();
 
     while(it != end)
     {
@@ -160,9 +127,11 @@ expand(Context const&  ctx, ArgumentList const*  args) const
                 {
                   auto  s = **tmp+*tok;
 
-                  auto  toks = process_text(s);
+                  auto  toks = tokenize_sub_text(s.data());
 
-                  output += process_token_string(toks,ctx);
+                  process_token_string(toks,ctx);
+
+                  output += std::move(toks);
 
                   tmp = nullptr;
                 }
@@ -171,23 +140,7 @@ expand(Context const&  ctx, ArgumentList const*  args) const
                 {
                     if(*tmp == TokenKind::identifier)
                     {
-                      auto  res = process_identifier(*tmp,it,ctx,this);
-
-                        if(res.size())
-                        {
-                          output += res;
-                        }
-
-                      else
-                        if(args)
-                        {
-                          output += replace(**tmp,parameter_list,*args);
-                        }
-
-                      else
-                        {
-                          output += *tmp;
-                        }
+                      process_identifier(--it,output,ctx,this,args);
                     }
 
                   else

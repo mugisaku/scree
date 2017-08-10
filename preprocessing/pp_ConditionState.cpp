@@ -36,9 +36,9 @@ skip()
 
 namespace{
 bool
-test_identifier(std::string const&  s, Context const&  ctx)
+test_identifier(char const*  expression_text, Context const&  ctx)
 {
-  Cursor  cur(s);
+  Cursor  cur(expression_text);
 
     if(!isident0(*cur))
     {
@@ -60,54 +60,48 @@ test_identifier(std::string const&  s, Context const&  ctx)
 }
 
 
+bool
+test_expression(char const*  expression_text, Context const&  ctx)
+{
+  return make_expression(expression_text,ctx).evaluate(ctx);
+}
+
+
 }
 
 
 void
 ConditionState::
-check(IfDirectiveKind  k, Context const&  ctx, char const*  expression)
+check(IfDirectiveKind  k, Context const&  ctx, char const*  expression_text)
 {
-  std::string  s(expression? expression:"");
-
-    if(if_stack.size())
+    if((last_if == IfDirectiveKind::else_) &&
+       (k       == IfDirectiveKind::elif ))
     {
-        if((k               == IfDirectiveKind::elif ) &&
-           (if_stack.back() == IfDirectiveKind::else_))
-        {
-          throw Error(Cursor(),"elseの後にelifが現れた");
-        }
-    }
-
-  else
-    if((k == IfDirectiveKind::else_) ||
-       (k == IfDirectiveKind::elif ) ||
-       (k == IfDirectiveKind::endif))
-    {
-      throw Error(Cursor(),"ifが無ければ、elif.else,endifは不正");
+      throw Error(Cursor(),"elseの後にelifが現れた");
     }
 
 
-  if_stack.emplace_back(k);
+  last_if = k;
 
     switch(k)
     {
   case(IfDirectiveKind::if_):
-        if(!is_locked() && value_expression(s,ctx)){enter();}
-      else                                         { skip();}
+        if(!is_locked() && test_expression(expression_text,ctx)){enter();}
+      else                                                      { skip();}
       break;
   case(IfDirectiveKind::ifdef):
-        if(!is_locked() && test_identifier(s,ctx)){enter();}
-      else                                        { skip();}
+        if(!is_locked() && test_identifier(expression_text,ctx)){enter();}
+      else                                                      { skip();}
       break;
   case(IfDirectiveKind::ifndef):
-        if(!is_locked() && !test_identifier(s,ctx)){enter();}
-      else                                         { skip();}
+        if(!is_locked() && !test_identifier(expression_text,ctx)){enter();}
+      else                                                       { skip();}
       break;
   case(IfDirectiveKind::elif):
       frames.pop_back();
 
-        if(!is_locked() && is_not_closed() && value_expression(s,ctx)){enter();}
-      else                                                            { skip();}
+        if(!is_locked() && is_not_closed() && test_expression(expression_text,ctx)){enter();}
+      else                                                                         { skip();}
       break;
   case(IfDirectiveKind::else_):
       frames.pop_back();
