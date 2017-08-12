@@ -48,15 +48,15 @@ replace(std::string const&  id, ParameterList const&  parls, ArgumentList const&
 
 
 bool
-process_identifier(TokenString::iterator&  it, TokenString&  buf, Context const&  ctx,
-                   Macro const*  parent, ArgumentList const*  args)
+process_identifier(TokenString::const_iterator&  it, TokenString&  buf, Context const&  ctx,
+                   FunctionData const*  fn)
 {
   auto&  id = *it     ;
                it += 1;
 
-    if(parent && args)
+    if(fn)
     {
-      buf += preprocessing::replace(*id,parent->get_parameter_list(),*args);
+      buf += preprocessing::replace(*id,fn->macro.get_parameter_list(),fn->argument_list);
 
       return true;
     }
@@ -80,19 +80,19 @@ process_identifier(TokenString::iterator&  it, TokenString&  buf, Context const&
 
   auto  macro = ctx.find_macro(*id);
 
-    if(macro && (macro != parent))
+    if(macro && !id.test_hideset(*macro))
     {
         if(macro->is_function_style())
         {
             if(*it != '(')
             {
-              throw Error(Cursor(),"%sは関数マクロですが、実引数リストがありませsん",macro->get_name().data());
+              throw Error(Cursor(),"%sは関数マクロですが、実引数リストがありません",macro->get_name().data());
             }
 
 
           it += 1;
 
-          auto  coargs = read_argument_list(const_cast<TokenString::const_iterator&>(it),ctx);
+          auto  coargs = read_argument_list(it,ctx);
 
           buf += macro->expand(ctx,&coargs);
         }
@@ -106,11 +106,8 @@ process_identifier(TokenString::iterator&  it, TokenString&  buf, Context const&
       return true;
     }
 
-  else
-    {
-      buf += std::move(id);
-    }
 
+  buf += id;
 
   return false;
 }

@@ -47,13 +47,14 @@ test_identifier(char const*  expression_text, Context const&  ctx)
 
 
   auto  id = read_identifier(cur);
-
+/*
   skip_spaces(cur);
 
     if(*cur)
     {
       throw Error(cur,"識別子の後に余計なものがあります");
     }
+*/
 
 
   return ctx.find_macro(id);
@@ -67,6 +68,17 @@ test_expression(char const*  expression_text, Context const&  ctx)
 }
 
 
+}
+
+
+void
+ConditionState::
+test_stack() const
+{
+    if(frames.empty())
+    {
+      throw Error("フレーム・スタックが空");
+    }
 }
 
 
@@ -98,18 +110,16 @@ check(IfDirectiveKind  k, Context const&  ctx, char const*  expression_text)
       else                                                       { skip();}
       break;
   case(IfDirectiveKind::elif):
-      frames.pop_back();
-
         if(!is_locked() && is_not_closed() && test_expression(expression_text,ctx)){enter();}
       else                                                                         { skip();}
       break;
   case(IfDirectiveKind::else_):
-      frames.pop_back();
-
         if(!is_locked() && is_not_closed()){enter();}
       else                                 { skip();}
       break;
   case(IfDirectiveKind::endif):
+      test_stack();
+
       frames.pop_back();
 
       frames.back().closed = false;

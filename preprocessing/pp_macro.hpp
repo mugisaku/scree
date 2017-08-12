@@ -36,12 +36,13 @@ public:
   Macro(std::string&&  name_): name(std::move(name_)){}
   Macro(std::string&&  name_, int  v): name(std::move(name_)), token_string(Token(v)){}
 
+  bool  operator==(Macro const&  name_) const;
   bool  operator==(std::string const&  name_) const{return name == name_;}
 
   std::string const&  get_name() const{return name;}
   TokenString const&  get_token_string() const{return token_string;}
 
-  void  set_token_string(TokenString&&  toks){token_string = std::move(toks);}
+  void  set_token_string(TokenString&&  toks);
 
   ParameterList const&  get_parameter_list() const{return parameter_list;}
   void                  set_parameter_list(ParameterList&&  ls);

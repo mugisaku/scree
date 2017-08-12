@@ -4,6 +4,7 @@
 
 #include<string>
 #include<memory>
+#include<vector>
 #include"pp_cursor.hpp"
 
 
@@ -35,7 +36,7 @@ TokenKind
 class
 TokenInfo
 {
-  std::shared_ptr<std::string>  file_path;
+  std::string const*  file_path;
 
   int    line_count=0;
   int  column_point=0;
@@ -43,16 +44,19 @@ TokenInfo
 public:
   TokenInfo(){}
   TokenInfo(Cursor&  cur):
-  file_path(cur.share_file_path()),
+  file_path(&cur.get_file_path()),
   line_count(cur.get_line_count()),
   column_point(cur.get_column_point()){}
 
-  char const*  get_file_path() const{return file_path? file_path->data():"";}
+  std::string const&  get_file_path() const{return *file_path;}
 
   int  get_line_count() const{return line_count;}
   int  get_column_point() const{return column_point;}
 
 };
+
+
+struct Macro;
 
 
 class
@@ -65,6 +69,8 @@ Token
   std::string  suffix;
 
   TokenInfo  info;
+
+  std::vector<std::string>  hideset;
 
 public:
   Token(){}
@@ -82,12 +88,13 @@ public:
   bool  operator==(char  c) const{return(string[0] == c);}
   bool  operator!=(char  c) const{return(string[0] != c);}
 
+  std::string const&  operator* () const{return  string;}
+  std::string const*  operator->() const{return &string;}
+
   operator bool() const{return kind != TokenKind::null;}
 
-  static bool  is_integer(TokenKind  k){return((k == TokenKind::binary_integer     ) ||
-                                               (k == TokenKind::octal_integer      ) ||
-                                               (k == TokenKind::decimal_integer    ) ||
-                                               (k == TokenKind::hexadecimal_integer));}
+
+  static bool  is_integer(TokenKind  k);
 
   TokenKind  get_kind() const{return kind;}
 
@@ -97,8 +104,11 @@ public:
   void  set_prefix(std::string const&  s){prefix = s;}
   void  set_suffix(std::string const&  s){suffix = s;}
 
-  std::string const&  operator* () const{return  string;}
-  std::string const*  operator->() const{return &string;}
+  void  append_macro(Macro const&  m);
+
+  bool  test_hideset(Macro const&  m) const;
+
+  std::vector<std::string> const&  get_hideset() const{return hideset;}
 
   std::string  to_string() const;
 

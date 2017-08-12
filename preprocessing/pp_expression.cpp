@@ -10,12 +10,11 @@ namespace preprocessing{
 
 
 Expression::
-Expression(Mnemonic  mn, Expression*  l, Expression*  r, Expression*  c):
+Expression(Mnemonic  mn, Expression*  l, Expression*  r):
 kind(l? ExpressionKind::operation:ExpressionKind::operator_),
 mnemonic(mn),
 left(l),
-right(r),
-condition(c)
+right(r)
 {
 }
 
@@ -31,9 +30,9 @@ operator=(Expression const&  rhs) noexcept
   kind = rhs.kind;
   mnemonic = rhs.mnemonic;
   token = rhs.token;
-  condition = rhs.condition? new Expression(*rhs.condition):nullptr;
-  left      = rhs.left     ? new Expression(*rhs.left     ):nullptr;
-  right     = rhs.right    ? new Expression(*rhs.right    ):nullptr;
+
+  left  = rhs.left ? new Expression(*rhs.left ):nullptr;
+  right = rhs.right? new Expression(*rhs.right):nullptr;
 
   return *this;
 }
@@ -51,9 +50,8 @@ operator=(Expression&&  rhs) noexcept
 
   token = std::move(rhs.token);
 
-  std::swap(condition,rhs.condition);
-  std::swap(left     ,rhs.left     );
-  std::swap(right    ,rhs.right    );
+  std::swap(left ,rhs.left );
+  std::swap(right,rhs.right);
 
   return *this;
 }
@@ -71,9 +69,6 @@ clear()
   delete right          ;
          right = nullptr;
 
-  delete condition          ;
-         condition = nullptr;
-
       kind = ExpressionKind::null;
   mnemonic =        Mnemonic::nop;
 }
@@ -81,17 +76,23 @@ clear()
 
 long
 Expression::
-operate(Context const&  ctx) const
+operate(Context const&  ctx, bool  b) const
 {
-    if(condition)
+    if(mnemonic == Mnemonic::eth)
     {
-      return condition->evaluate(ctx)?  left->evaluate(ctx)
-                                     : right->evaluate(ctx);
+        if(b){return  left->evaluate(ctx);}
+      else   {return right->evaluate(ctx);}
     }
 
-
+  
   auto  lv =  left->evaluate(ctx);
 
+    if(mnemonic == Mnemonic::cho)
+    {
+      return right->evaluate(ctx,lv);
+    }
+
+  else
     if(mnemonic == Mnemonic::log_or)
     {
         if(lv)
@@ -202,13 +203,15 @@ is_binary_operation() const
          (mnemonic == Mnemonic::lt     ) ||
          (mnemonic == Mnemonic::lteq   ) ||
          (mnemonic == Mnemonic::gt     ) ||
-         (mnemonic == Mnemonic::gteq   ));
+         (mnemonic == Mnemonic::gteq   ) ||
+         (mnemonic == Mnemonic::cho    ) ||
+         (mnemonic == Mnemonic::eth    ));
 }
 
 
 long
 Expression::
-evaluate(Context const&  ctx) const
+evaluate(Context const&  ctx, bool  b) const
 {
   long  l;
 
@@ -220,7 +223,7 @@ evaluate(Context const&  ctx) const
       throw Error("未定義の値");
       break;
   case(ExpressionKind::operation):
-      l = operate(ctx);
+      l = operate(ctx,b);
       break;
   case(ExpressionKind::operand):
       l = token.to_integer();
@@ -253,24 +256,6 @@ print() const
           print_mnemonic();
 
           if(left){left->print();}
-        }
-
-      else
-        if(condition)
-        {
-          printf("(");
-
-          if(condition){condition->print();}
-
-          printf(")?");
-
-          if(left){left->print();}
-
-          printf("):(");
-
-          if(right){right->print();}
-
-          printf(")");
         }
 
       else
@@ -323,6 +308,8 @@ print_mnemonic() const
   case(Mnemonic::log_and): s = "&&";break;
   case(Mnemonic::log_not): s = "!";break;
   case(Mnemonic::neg): s = "-";break;
+  case(Mnemonic::cho): s = "?";break;
+  case(Mnemonic::eth): s = ":";break;
     }
 
 

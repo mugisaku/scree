@@ -62,6 +62,8 @@ public:
   const_iterator  cbegin() const{return pointer;}
   const_iterator    cend() const{return pointer+length;}
 
+  void  append_macro(Macro const&  m);
+
   void  print(FILE*  out=stdout, bool  newline=false) const;
 
 };

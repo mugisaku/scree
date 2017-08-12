@@ -32,47 +32,54 @@ TokenString
 Macro::
 expand(Context const&  ctx, ArgumentList const*  args) const
 {
-  enum class Operator{
-    none,
-    stringize,
-    concatenate,
-  } op = Operator::none;
-
-
-  Token const*  tmp = nullptr;
-
   TokenString  output;
 
-  auto         it = token_string.begin();
-  auto  const end = token_string.end();
+  auto         it = token_string.cbegin();
+  auto  const end = token_string.cend();
 
     while(it != end)
     {
       auto&  tok = *it;
-
-        if(!tok)
-        {
-          break;
-        }
-
-      else
+//for(auto&  s: tok.get_hideset())
+{
+//preprocessing::print(s);
+}
         if(compare(it,'#','#'))
         {
           it += 2;
 
-            if(!tmp)
+            if(!*it)
             {
-              throw Error(Cursor(),"連結演算の左辺がない");
+              throw Error(Cursor(),"連結演算の右辺が無い");
             }
 
 
-            if(op != Operator::none)
+            if(output.empty())
             {
-              throw Error(Cursor(),"演算異常１");
+              throw Error(Cursor(),"連結演算の左辺が無い");
             }
 
 
-          op = Operator::concatenate;
+          std::string  s;
+
+          auto&  lhs = output.back();
+          auto&  rhs = *it++;
+
+          s +=  lhs.get_prefix();
+          s += *lhs;
+          s +=  lhs.get_suffix();
+          s +=  rhs.get_prefix();
+          s += *rhs;
+          s +=  rhs.get_suffix();
+
+          auto  tmptoks = tokenize_sub_text(s.data());
+
+
+          tmptoks.append_macro(*this);
+
+          process_token_string(tmptoks,ctx);
+
+          output += tmptoks;
         }
 
       else
@@ -80,13 +87,15 @@ expand(Context const&  ctx, ArgumentList const*  args) const
         {
           it += 1;
 
-            if(op != Operator::none)
+            if(!*it)
             {
-              throw Error(Cursor(),"演算異常２");
+              throw Error(Cursor(),"文字列演算の項が無い");
             }
 
 
-          op = Operator::stringize;
+          output += Token(TokenKind::string,std::string(**it++));
+
+          output.back().append_macro(*this);
         }
 
       else
@@ -97,71 +106,28 @@ expand(Context const&  ctx, ArgumentList const*  args) const
 
       else
         {
-          it += 1;
-
-            if(!tmp)
+            if(tok == TokenKind::identifier)
             {
-                if(op == Operator::stringize)
+                if(args)
                 {
-                  output += Token(TokenKind::string,std::string(*tok));
+                  FunctionData  fn(*this,*args);
+
+                  process_identifier(it,output,ctx,&fn);
                 }
 
               else
                 {
-                  tmp = &tok;
+                  process_identifier(it,output,ctx,nullptr);
                 }
             }
 
           else
             {
-                if(op == Operator::stringize)
-                {
-                  output += Token(TokenKind::string,std::string(**tmp));
-                  output += Token(TokenKind::string,std::string( *tok));
+              it += 1;
 
-                  tmp = nullptr;
-                }
-
-              else
-                if(op == Operator::concatenate)
-                {
-                  auto  s = **tmp+*tok;
-
-                  auto  toks = tokenize_sub_text(s.data());
-
-                  process_token_string(toks,ctx);
-
-                  output += std::move(toks);
-
-                  tmp = nullptr;
-                }
-
-              else
-                {
-                    if(*tmp == TokenKind::identifier)
-                    {
-                      process_identifier(--it,output,ctx,this,args);
-                    }
-
-                  else
-                    {
-                      output += *tmp;
-                    }
-
-
-                  tmp = &tok;
-                }
-
-
-              op = Operator::none;
+              output += tok;
             }
         }
-    }
-
-
-    if(tmp)
-    {
-      output += *tmp;
     }
 
 

@@ -36,17 +36,26 @@ Context()
 
   append_macro(std::move(date));
   append_macro(std::move(time));
-
-
-  append_macro(Macro(std::string("__cplusplus"),Token(0)));
-
-  append_macro(Macro(std::string("__GNUC__"),1));
-  append_macro(Macro(std::string("__STDC__"),1));
-  append_macro(Macro(std::string("__STDC_VERSION__"),201112));
-  append_macro(Macro(std::string("__cpp_exceptions"),199711));
 }
 
 
+
+
+void
+Context::
+clear()
+{
+}
+
+
+std::string const&
+Context::
+hold_string(std::string&&  s)
+{
+  string_table.emplace_back(std::move(s));
+
+  return string_table.back();
+}
 
 
 void

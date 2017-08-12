@@ -149,9 +149,25 @@ read_include(Cursor&  cur, Context&  ctx)
   fclose(f);
 
 
-  auto  toks = tokenize_main_text(content.data(),res.second.data());
+  auto&  held_path = ctx.hold_string(std::move(res.second));
 
-  process_token_string_that_includes_directives(toks,ctx);
+  auto  toks = tokenize_main_text(content.data(),&held_path);
+
+  printf("try include %s\n",held_path.data());
+
+    try
+    {
+      process_token_string_that_includes_directives(toks,ctx);
+    }
+
+
+    catch(Error&  e)
+    {
+      printf("インクルードエラー %s\n",held_path.data());
+
+      throw;
+    }
+
 
   return std::move(toks);
 }

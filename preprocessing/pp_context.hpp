@@ -16,10 +16,18 @@ Context
 {
   std::vector<std::string>  include_directory_list;
 
+  std::list<std::string>  string_table;
+
   std::list<Macro>  macro_table;
 
 public:
   Context();
+ ~Context(){clear();}
+
+
+  void  clear();
+
+  std::string const&  hold_string(std::string&&  s);
 
   Macro const*  find_macro(const std::string&  name) const;
 

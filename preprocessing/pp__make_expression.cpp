@@ -49,6 +49,10 @@ precedence(Mnemonic  mn)
   case(Mnemonic::gteq   ): p -= 8;break;
   case(Mnemonic::log_and): p -= 13;break;
   case(Mnemonic::log_or ): p -= 14;break;
+  case(Mnemonic::cho    ): p -= 15;break;
+  case(Mnemonic::eth    ): p -= 15;break;
+  default:
+      throw Error("不明なニーモニック");
     }
 
 
@@ -87,6 +91,25 @@ make_unary_operation(std::vector<char>&  stack, Expression&&  expr)
 
 
 Expression
+make_either_expression(TokenString::const_iterator&  it, Context const&  ctx)
+{
+  auto  l = new Expression(make_expression(it,ctx));
+
+    if(*it != ":")
+    {
+      throw Error("三項演算の\':\'がない");
+    }
+
+
+  it += 1;
+
+  auto  r = new Expression(make_expression(it,ctx));
+
+  return Expression(Mnemonic::eth,l,r);
+}
+
+
+Expression
 make_expression(TokenString::const_iterator&  it, Context const&  ctx)
 {
   std::vector<char>       unop_stack;
@@ -96,10 +119,24 @@ make_expression(TokenString::const_iterator&  it, Context const&  ctx)
 
   auto  last_k = ElementKind::null;
 
+  bool  cond = false;
+
     while(*it)
     {
       auto&  tok = *it;
 
+        if(cond)
+        {
+          auto  expr = make_either_expression(it,ctx);
+
+          output.emplace_back(std::move(expr));
+
+          last_k = ElementKind::operand;
+
+          cond = false;
+        }
+
+      else
         if(tok == TokenKind::operator_)
         {
           it += 1;
@@ -118,6 +155,14 @@ make_expression(TokenString::const_iterator&  it, Context const&  ctx)
           else
             if(tok == ")")
             {
+              break;
+            }
+
+          else
+            if(tok == ":")
+            {
+              it -= 1;
+
               break;
             }
 
@@ -153,6 +198,8 @@ make_expression(TokenString::const_iterator&  it, Context const&  ctx)
               else if(tok == ">>"){mn = Mnemonic::shr;}
               else if(tok == "&&"){mn = Mnemonic::log_and;}
               else if(tok == "||"){mn = Mnemonic::log_or;}
+              else if(tok == ":" ){mn = Mnemonic::eth;}
+              else if(tok == "?" ){  mn = Mnemonic::cho;  cond = true;}
               else {throw Error(Cursor(),"使えない二項演算子 %s",tok->data());}
 
                 while(binop_stack.size() && (mn < binop_stack.back()))
@@ -170,7 +217,7 @@ make_expression(TokenString::const_iterator&  it, Context const&  ctx)
         }
 
       else
-        if(Token::is_integer(tok.get_kind()) || (tok == TokenKind::character))
+        if(Token::is_integer(tok.get_kind()))
         {
           it += 1;
 
@@ -187,7 +234,7 @@ make_expression(TokenString::const_iterator&  it, Context const&  ctx)
         {
           it += 1;
 
-
+//print(*tok);
           auto  expr = make_unary_operation(unop_stack,Expression(ExpressionKind::undefined));
 
           output.emplace_back(std::move(expr));
@@ -197,7 +244,9 @@ make_expression(TokenString::const_iterator&  it, Context const&  ctx)
 
       else
         {
-          throw Error(Cursor(),"式には使えない字句");
+          tok.print();
+
+          throw Error(Cursor(),"式には使えない字句 %s %d",tok->data(),(int)tok.get_kind());
         }
     }
 
@@ -271,16 +320,17 @@ Expression
 make_expression(char const*  text, Context const&  ctx)
 {
   auto  toks = tokenize_sub_text(text);
-/*
+if(0){
 printf("[[\n");
 toks.print();
 printf("\n--\n");
-*/
+}
   process_token_string_for_expression(toks,ctx);
-/*
+
+if(0){
 toks.print();
 printf("\n]]\n");
-*/
+}
 
   auto  it = toks.cbegin();
 

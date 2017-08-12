@@ -1,6 +1,7 @@
 #include"pp_token.hpp"
 #include"pp_unicode.hpp"
 #include"pp_TokenString.hpp"
+#include"pp_macro.hpp"
 #include<cstdio>
 #include<cstdlib>
 #include<algorithm>
@@ -11,6 +12,31 @@
 namespace preprocessing{
 
 
+
+
+void
+Token::
+append_macro(Macro const&  m)
+{
+  hideset.emplace_back(m.get_name());
+}
+
+
+bool
+Token::
+test_hideset(Macro const&  m) const
+{
+    for(auto&  name: hideset)
+    {
+        if(name == m.get_name())
+        {
+          return true;
+        }
+    }
+
+
+  return false;
+}
 
 
 std::string
@@ -49,6 +75,74 @@ to_string() const
 
 
   return std::move(s);
+}
+
+
+namespace{
+long
+read_hexadecimal(char const*  p)
+{
+  long  l = 0;
+
+  while(isxdigit(*p))
+  {
+    auto  const c = *p++;
+
+    l <<= 4;
+
+      if((c >= '0') &&
+         (c <= '9'))
+      {
+        l |= c-'0';
+      }
+
+    else
+      {
+          switch(c)
+          {
+        case('a'):
+        case('A'): l |= 10;break;
+        case('b'):
+        case('B'): l |= 11;break;
+        case('c'):
+        case('C'): l |= 12;break;
+        case('d'):
+        case('D'): l |= 13;break;
+        case('e'):
+        case('E'): l |= 14;break;
+        case('f'):
+        case('F'): l |= 15;break;
+          }
+      }
+  }
+
+
+  return l;
+}
+
+
+long
+character_literal_to_integer(char const*  p)
+{
+    if(*p == '\\')
+    {
+          switch(*++p)
+          {
+        case('0'):  return '\0';
+        case('t'):  return '\t';
+        case('r'):  return '\r';
+        case('n'):  return '\n';
+        case('\\'): return '\\';
+        case('\''): return '\'';
+        case('\"'): return '\"';
+        case('x'): return read_hexadecimal(p+1);
+        default: throw Error("処理不可なエスケープ文字 %c",*p);
+          }
+    }
+
+
+  return *p;
+}
 }
 
 
@@ -93,7 +187,7 @@ to_integer() const
       l = std::strtol(p,nullptr,16);
       break;
   case(TokenKind::character):
-      l = *p;
+      l = character_literal_to_integer(string.data());
       break;
   default:
       throw Error(Cursor(),"この字句は整数に変換できない\n");
@@ -113,7 +207,7 @@ print(FILE*  out) const
     switch(kind)
     {
   case(TokenKind::null):
-      fprintf(out," NULL ");
+      fprintf(out,"NULL");
       break;
   case(TokenKind::binary_integer):
   case(TokenKind::octal_integer):
@@ -121,13 +215,13 @@ print(FILE*  out) const
   case(TokenKind::hexadecimal_integer):
   case(TokenKind::operator_):
   case(TokenKind::identifier):
-      fprintf(out,"%s ",string.data());
+      fprintf(out,"%s",string.data());
       break;
   case(TokenKind::string):
-      fprintf(out,"\"%s\" ",string.data());
+      fprintf(out,"\"%s\"",string.data());
       break;
   case(TokenKind::character):
-      fprintf(out,"\'%s\' ",string.data());
+      fprintf(out,"\'%s\'",string.data());
       break;
   case(TokenKind::directive):
       fprintf(out,"#%s",string.data());
@@ -138,6 +232,17 @@ print(FILE*  out) const
   fprintf(out,"%s",suffix.data());
 }
 
+
+bool
+Token::
+is_integer(TokenKind  k)
+{
+  return((k == TokenKind::binary_integer     ) ||
+         (k == TokenKind::octal_integer      ) ||
+         (k == TokenKind::decimal_integer    ) ||
+         (k == TokenKind::hexadecimal_integer) ||
+         (k == TokenKind::character));
+}
 
 
 

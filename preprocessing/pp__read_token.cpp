@@ -142,31 +142,50 @@ read_identifier(Cursor&  cur)
 }
 
 
-/*
-void
-scan_ucn(char*  buf, int  n, Cursor&  cur)
+char
+read_hexadecimal(Cursor&  cur)
 {
-    while(n--)
+  int  n = 0;
+
+    while(isxdigit(*cur))
     {
-      auto  c = *cur;
+      n <<= 4;
 
-        if(isxdigit(c))
+      auto  const c = *cur;
+
+      cur += 1;
+
+        if((c >= '0') &&
+           (c <= '9'))
         {
-          cur += 1;
-
-          *buf++ = c;
+          n += c-'0';
         }
 
       else
         {
-          throw Error(cur,"%s UCNには使えない文字",__func__);
+            switch(c)
+            {
+          case('a'):
+          case('A'): n += 10;break;
+          case('b'):
+          case('B'): n += 11;break;
+          case('c'):
+          case('C'): n += 12;break;
+          case('d'):
+          case('D'): n += 13;break;
+          case('e'):
+          case('E'): n += 14;break;
+          case('f'):
+          case('F'): n += 15;break;
+            }
         }
     }
 
 
-  *buf = 0;
+  cur -= 1;
+
+  return n;
 }
-*/
 
 
 std::string
@@ -178,32 +197,13 @@ read_quoted(Cursor&  cur,  char  key_char)
     {
       auto  const c = *cur;
 
-        if(iscntrl(c))
-        {
-          throw Error(cur,"クオート列に制御文字");
-        }
-
-      else
         if(c == '\\')
         {
+          s.push_back('\\');
+
           cur += 1;
 
-//          char  ubuf[16];
-
-            switch(*cur)
-            {
-          case('0'):  s.push_back('\0');break;
-          case('t'):  s.push_back('\t');break;
-          case('r'):  s.push_back('\r');break;
-          case('n'):  s.push_back('\n');break;
-          case('\\'): s.push_back('\\');break;
-          case('\''): s.push_back('\'');break;
-          case('\"'): s.push_back('\"');break;
-//          case('u'): scan_ucn(ubuf,4,cur);  s.append(ubuf);break;
-//          case('U'): scan_ucn(ubuf,8,cur);  s.append(ubuf);break;
-          default: throw Error(cur,"クオート列に処理不可なエスケープ文字");
-            }
-
+          s.push_back(*cur);
 
           cur += 1;
         }
@@ -214,6 +214,12 @@ read_quoted(Cursor&  cur,  char  key_char)
           cur += 1;
 
           break;
+        }
+
+      else
+        if(iscntrl(c))
+        {
+          throw Error(cur,"クオート列に制御文字 %d",c);
         }
 
       else

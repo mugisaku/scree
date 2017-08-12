@@ -8,6 +8,26 @@
 namespace preprocessing{
 
 
+bool
+Macro::
+operator==(Macro const&  name_) const
+{
+  return false;
+}
+
+
+
+
+void
+Macro::
+set_token_string(TokenString&&  toks)
+{
+  token_string = std::move(toks);
+
+  token_string.append_macro(*this);
+}
+
+
 void
 Macro::
 set_parameter_list(ParameterList&&  ls)

@@ -40,7 +40,8 @@ TokenString  read_include(Cursor&  cur, Context&  ctx);
 void          read_define(Cursor&  cur, Context&  ctx);
 
 
-Expression  make_expression(TokenString::const_iterator&  it, Context const&  ctx);
+Expression  make_either_expression(TokenString::const_iterator&  it, Context const&  ctx);
+Expression  make_expression(       TokenString::const_iterator&  it, Context const&  ctx);
 Expression  make_expression(char const*  text, Context const&  ctx);
 
 
@@ -54,12 +55,23 @@ bool  is_integer_suffix(std::string const&  s);
 Token  read_token(Cursor&  cur);
 
 
-TokenString  tokenize_main_text(char const*  s, char const*  file_path);
-TokenString  tokenize_sub_text( char const*  s                        );
+TokenString  tokenize_main_text(char const*  s, std::string const*  file_path);
+TokenString  tokenize_sub_text( char const*  s                               );
 
 
-bool  process_identifier(TokenString::iterator&  it, TokenString&  buf, Context const&  ctx,
-                         Macro const*  parent=nullptr, ArgumentList const*  args=nullptr);
+struct
+FunctionData
+{
+         Macro const&          macro;
+  ArgumentList const&  argument_list;
+
+  FunctionData(Macro const&  m, ArgumentList const&  a):
+  macro(m), argument_list(a){}
+
+};
+
+bool  process_identifier(TokenString::const_iterator&  it, TokenString&  buf, Context const&  ctx,
+                         FunctionData const*  fn=nullptr);
 
 void  process_token_string_that_includes_directives(TokenString&  toks, Context&        ctx);
 void  process_token_string_for_expression(          TokenString&  toks, Context const&  ctx);

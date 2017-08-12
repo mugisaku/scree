@@ -72,33 +72,25 @@ tokenize_sub_text(char const*  s)
 
   TokenKind  last_k = TokenKind::null;
 
-    for(;;)
+    while(*cur)
     {
-      skip_spaces(cur);
+      skip_spaces_and_newline(cur);
 
       auto  tok = read_token(cur);
 
-        if(!tok)
+      auto  k = last_k                 ;
+                last_k = tok.get_kind();
+
+        if((tok == TokenKind::identifier) &&
+           Token::is_integer(k) &&
+           is_integer_suffix(*tok))
         {
-          break;
+          toks.back().set_suffix(*tok);
         }
 
       else
         {
-          auto  k = last_k                 ;
-                    last_k = tok.get_kind();
-
-            if((tok == TokenKind::identifier) &&
-               Token::is_integer(k) &&
-               is_integer_suffix(*tok))
-            {
-              toks.back().set_suffix(*tok);
-            }
-
-          else
-            {
-              toks += std::move(tok);
-            }
+          toks += std::move(tok);
         }
     }
 
@@ -108,7 +100,7 @@ tokenize_sub_text(char const*  s)
 
 
 TokenString
-tokenize_main_text(char const*  s, char const*  file_path)
+tokenize_main_text(char const*  s, std::string const*  file_path)
 {
   Cursor  cur(s,file_path);
 
@@ -145,7 +137,7 @@ tokenize_main_text(char const*  s, char const*  file_path)
 
       else
         {
-          skip_spaces(cur);
+          skip_spaces_and_newline(cur);
 
           toks += read_token(cur);
         }

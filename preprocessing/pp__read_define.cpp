@@ -11,6 +11,8 @@ read_parameter_list(Cursor&  cur)
 {
   ParameterList  parls;
 
+  bool  va = false;
+
     for(;;)
     {
       skip_spaces(cur);
@@ -38,8 +40,18 @@ read_parameter_list(Cursor&  cur)
         }
 
       else
+        if(cur.compare('.','.','.'))
         {
-          throw Error(cur,"仮引数リストの読み込み中に不明な文字");
+          parls.emplace_back(std::string("..."));
+
+          cur += 3;
+
+          va = true;
+        }
+
+      else
+        {
+          throw Error(cur,"仮引数リストの読み込み中に不明な文字 %c(%d)",c,c);
         }
     }
 
@@ -53,11 +65,6 @@ void
 read_define(Cursor&  cur, Context&  ctx)
 {
   auto  id = read_identifier(cur);
-
-    if(ctx.find_macro(id))
-    {
-      throw Error(cur,"既に定義済みの識別子");
-    }
 
 
   Macro  macro(std::move(id));
@@ -91,6 +98,17 @@ read_define(Cursor&  cur, Context&  ctx)
 
 
   macro.set_token_string(std::move(toks));
+
+  auto  result = ctx.find_macro(id);
+
+    if(result)
+    {
+        if(*result == macro)
+        {
+          throw Error(cur,"既に定義済みの識別子");
+        }
+    }
+
 
   ctx.append_macro(std::move(macro));
 }

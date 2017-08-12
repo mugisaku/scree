@@ -44,6 +44,8 @@ ConditionState
 
   std::vector<StackFrame>  frames;
 
+  void  test_stack() const;
+
 public:
   ConditionState();
 

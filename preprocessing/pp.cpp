@@ -201,6 +201,8 @@ process_option(int  argc, char**  argv, preprocessing::Context&  ctx)
 int
 main(int  argc, char**  argv)
 {
+  using namespace preprocessing;
+
   preprocessing::Context  ctx;
 
   ctx.append_include_directory(std::string("../preprocessing"));
@@ -208,7 +210,31 @@ main(int  argc, char**  argv)
   ctx.append_include_directory(std::string("/usr/include/c++/5"));
   ctx.append_include_directory(std::string("/usr/include/i386-linux-gnu"));
   ctx.append_include_directory(std::string("/usr/include/i386-linux-gnu/c++/5"));
+  ctx.append_include_directory(std::string("/usr/lib/gcc/i686-linux-gnu/5/include"));
 
+
+  ctx.append_macro(Macro(std::string("__cplusplus"),Token(0)));
+
+  ctx.append_macro(Macro(std::string("__GNUC__"),1));
+  ctx.append_macro(Macro(std::string("__STDC__"),1));
+  ctx.append_macro(Macro(std::string("__WORDSIZE"),1));
+  ctx.append_macro(Macro(std::string("__STDC_VERSION__"),201112));
+  ctx.append_macro(Macro(std::string("__cpp_exceptions"),199711));
+  ctx.append_macro(Macro(std::string("_GLIBCXX_USE_C99_CHECK"),0));
+  ctx.append_macro(Macro(std::string("_GLIBCXX_USE_C99"),0));
+  ctx.append_macro(Macro(std::string("__GLIBC__"),0));
+  ctx.append_macro(Macro(std::string("__GLIBC_MINOR__"),0));
+  ctx.append_macro(Macro(std::string("_GLIBCXX_EXTERN_TEMPLATE"),0));
+  ctx.append_macro(Macro(std::string("_GLIBCXX_USE_C99_DYNAMIC"),0));
+  ctx.append_macro(Macro(std::string("_GLIBCXX_USE_C99_LONG_LONG_CHECK"),0));
+  ctx.append_macro(Macro(std::string("_GLIBCXX_USE_C99_LONG_LONG_DYNAMIC"),0));
+  ctx.append_macro(Macro(std::string("__GXX_WEAK__"),0));
+  ctx.append_macro(Macro(std::string("_GLIBCXX_USE_WCHAR_T"),0));
+  ctx.append_macro(Macro(std::string("_GLIBCXX_HAVE_WCHAR_H"),0));
+  ctx.append_macro(Macro(std::string("_GLIBCXX_HAVE_VSWSCANF"),0));
+  ctx.append_macro(Macro(std::string("_GLIBCXX_HAVE_VWSCANF"),0));
+  ctx.append_macro(Macro(std::string("_GLIBCXX_HAVE_VFWSCANF"),0));
+  ctx.append_macro(Macro(std::string("_GLIBCXX_HAVE_WCSTOF"),0));
 
   preprocessing::TokenString  toks;
 
@@ -220,7 +246,7 @@ main(int  argc, char**  argv)
 
     try
     {
-      toks = preprocessing::tokenize_main_text(s.data(),in_path.data());
+      toks = preprocessing::tokenize_main_text(s.data(),&in_path);
 
         if(!quiet)
         {
@@ -242,6 +268,12 @@ main(int  argc, char**  argv)
       e.cursor.print();
 
       printf("%s\n",e.what());
+
+        if(!quiet)
+        {
+          ctx.print();
+        }
+
 
       exit(-1);
     }

@@ -48,6 +48,8 @@ Mnemonic
   log_and,
   log_not,
   neg,
+  cho,
+  eth,
 
 };
 
@@ -61,16 +63,15 @@ Expression
 
   Token  token;
 
-  Expression*  condition=nullptr;
-  Expression*       left=nullptr;
-  Expression*      right=nullptr;
+  Expression*   left=nullptr;
+  Expression*  right=nullptr;
 
-  long  operate(Context const&  ctx) const;
+  long  operate(Context const&  ctx, bool  b) const;
 
 public:
   Expression(){}
   Expression(ExpressionKind  k): kind(k){}
-  Expression(Mnemonic  mn, Expression*  l=nullptr, Expression*  r=nullptr, Expression*  c=nullptr);
+  Expression(Mnemonic  mn, Expression*  l=nullptr, Expression*  r=nullptr);
   Expression(Token const&  tok): kind(ExpressionKind::operand), token(tok){}
   Expression(Expression const&  rhs) noexcept{*this = rhs;}
   Expression(Expression&&       rhs) noexcept{*this = std::move(rhs);}
@@ -88,7 +89,7 @@ public:
   bool   is_unary_operation() const;
   bool  is_binary_operation() const;
 
-  long  evaluate(Context const&  ctx) const;
+  long  evaluate(Context const&  ctx, bool  b=true) const;
 
   void  print() const;
   void  print_mnemonic() const;

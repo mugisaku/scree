@@ -7,11 +7,28 @@ namespace preprocessing{
 
 
 
+std::string
+Cursor::
+null_path;
+
+
+
+
 Cursor&
 Cursor::
 operator+=(int  n)
 {
   pointer += n;
+
+  return *this;
+}
+
+
+Cursor&
+Cursor::
+operator-=(int  n)
+{
+  pointer -= n;
 
   return *this;
 }

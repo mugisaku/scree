@@ -156,6 +156,17 @@ clear()
 
 void
 TokenString::
+append_macro(Macro const&  m)
+{
+    for(auto&  tok: *this)
+    {
+      tok.append_macro(m);
+    }
+}
+
+
+void
+TokenString::
 print(FILE*  out, bool  newline) const
 {
     for(auto&  tok: *this)

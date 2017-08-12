@@ -129,8 +129,29 @@ step_process_token_string_that_includes_directives(TokenString&  toks, Context& 
                 }
 
               else
-                if(process_identifier(--it,tmps,ctx))
+                if(process_identifier(--const_cast<TokenString::const_iterator&>(it),tmps,ctx))
                 {
+                }
+            }
+
+          else
+            if((tok == TokenKind::character) && (last_k == TokenKind::identifier))
+            {
+              auto&  bk = tmps.back();
+
+                if((bk == "L" ) ||
+                   (bk == "u8") ||
+                   (bk == "u" ) ||
+                   (bk == "U"))
+                {
+                  tok.set_prefix(*bk);
+
+                  bk = std::move(tok);
+                }
+
+              else
+                {
+                  throw Error("文字定数に不明な接頭辞　%s",bk->data());
                 }
             }
 
@@ -147,7 +168,7 @@ step_process_token_string_that_includes_directives(TokenString&  toks, Context& 
 
     if(cond_st.get_depth() > 1)
     {
-      throw Error(Cursor(),"対応するif文が無い");
+//      throw Error(Cursor(),"対応するif文が無い %d",cond_st.get_depth());
     }
 
 
@@ -155,10 +176,10 @@ step_process_token_string_that_includes_directives(TokenString&  toks, Context& 
 }
 
 
-int
+bool
 step_process_token_string_for_expression(TokenString&  toks, Context const&  ctx)
 {
-  int  count = 0;
+  bool  modified = false;
 
   TokenString  tmps;
 
@@ -206,7 +227,7 @@ step_process_token_string_for_expression(TokenString&  toks, Context const&  ctx
                 }
 
 
-              ++count;
+              modified = true;
             }
 
           else
@@ -214,14 +235,38 @@ step_process_token_string_for_expression(TokenString&  toks, Context const&  ctx
             {
               tmps.back().set_suffix(*tok);
 
-              ++count;
+              modified = true;
             }
 
           else
-            if(process_identifier(--it,tmps,ctx))
+            if(process_identifier(--const_cast<TokenString::const_iterator&>(it),tmps,ctx))
             {
-              ++count;
+              modified = true;
             }
+        }
+
+      else
+        if((tok == TokenKind::character) && (last_k == TokenKind::identifier))
+        {
+          auto&  bk = tmps.back();
+
+            if((bk == "L" ) ||
+               (bk == "u8") ||
+               (bk == "u" ) ||
+               (bk == "U"))
+            {
+              tok.set_prefix(*bk);
+
+              bk = std::move(tok);
+            }
+
+          else
+            {
+              throw Error("文字定数に不明な接頭辞　%s",bk->data());
+            }
+
+
+          modified = true;
         }
 
       else
@@ -236,14 +281,14 @@ step_process_token_string_for_expression(TokenString&  toks, Context const&  ctx
 
   toks = std::move(tmps);
 
-  return count;
+  return modified;
 }
 
 
-int
+bool
 step_process_token_string(TokenString&  toks, Context const&  ctx)
 {
-  int  count = 0;
+  bool  modified = false;
 
   TokenString  tmps;
 
@@ -263,13 +308,36 @@ step_process_token_string(TokenString&  toks, Context const&  ctx)
             {
               tmps.back().set_suffix(*tok);
 
-              ++count;
+              modified = true;
             }
 
           else
-            if(process_identifier(--it,tmps,ctx))
+            if(process_identifier(--const_cast<TokenString::const_iterator&>(it),tmps,ctx))
             {
-              ++count;
+              modified = true;
+            }
+        }
+
+      else
+        if((tok == TokenKind::character) && (last_k == TokenKind::identifier))
+        {
+          auto&  bk = tmps.back();
+
+            if((bk == "L" ) ||
+               (bk == "u8") ||
+               (bk == "u" ) ||
+               (bk == "U"))
+            {
+              tok.set_prefix(*bk);
+
+              bk = std::move(tok);
+
+              modified = true;
+            }
+
+          else
+            {
+              throw Error("文字定数に不明な接頭辞　%s",bk->data());
             }
         }
 
@@ -285,7 +353,17 @@ step_process_token_string(TokenString&  toks, Context const&  ctx)
 
   toks = std::move(tmps);
 
-  return count;
+  return modified;
+}
+
+
+void
+check(int&  n)
+{
+    if(n++ > 100)
+    {
+      throw Error("繰り返し処理回数が多すぎる");
+    }
 }
 
 
@@ -297,12 +375,17 @@ process_token_string_that_includes_directives(TokenString&  toks, Context&  ctx)
 {
   step_process_token_string_that_includes_directives(toks,ctx);
 
+  int  n = 0;
+
     for(;;)
     {
         if(!step_process_token_string(toks,ctx))
         {
           break;
         }
+
+
+      check(n);
     }
 }
 
@@ -310,12 +393,17 @@ process_token_string_that_includes_directives(TokenString&  toks, Context&  ctx)
 void
 process_token_string_for_expression(TokenString&  toks, Context const&  ctx)
 {
+  int  n = 0;
+
     for(;;)
     {
         if(!step_process_token_string_for_expression(toks,ctx))
         {
           break;
         }
+
+
+      check(n);
     }
 }
 
@@ -323,12 +411,17 @@ process_token_string_for_expression(TokenString&  toks, Context const&  ctx)
 void
 process_token_string(TokenString&  toks, Context const&  ctx)
 {
+  int  n = 0;
+
     for(;;)
     {
         if(!step_process_token_string(toks,ctx))
         {
           break;
         }
+
+
+      check(n);
     }
 }
 
